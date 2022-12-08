@@ -250,6 +250,7 @@ public class ConversationListFragment extends MainFragment implements ActionMode
     super.onCreate(icicle);
     setHasOptionsMenu(true);
     startupStopwatch = new Stopwatch("startup");
+    ApplicationDependencies.getRecipientCache().warmUp();
   }
 
   @Override
