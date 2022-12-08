@@ -36,6 +36,25 @@ public class EmojiProvider {
   private static final    String TAG   = Log.tag(EmojiProvider.class);
   private static final    Paint  PAINT = new Paint(Paint.FILTER_BITMAP_FLAG | Paint.ANTI_ALIAS_FLAG);
 
+  public interface onCandidatesLoadedListener {
+    void onCandidatesLoaded(EmojiParser.CandidateList candidates);
+  }
+
+  public static void getCandidates(@Nullable CharSequence text, onCandidatesLoadedListener onCandidatesLoaded) {
+    if (text == null) return;
+
+    if(EmojiSource.getNeedToWait()) {
+      new Thread(){
+        @Override public void run() {
+          final EmojiParser.CandidateList candidates = new EmojiParser(EmojiSource.getLatest().getEmojiTree()).findCandidates(text);
+          ThreadUtil.runOnMain(() -> onCandidatesLoaded.onCandidatesLoaded(candidates));
+        }
+      }.start();
+    } else {
+      onCandidatesLoaded.onCandidatesLoaded(new EmojiParser(EmojiSource.getLatest().getEmojiTree()).findCandidates(text));
+    }
+  }
+
   public static @Nullable EmojiParser.CandidateList getCandidates(@Nullable CharSequence text) {
     if (text == null) return null;
     return new EmojiParser(EmojiSource.getLatest().getEmojiTree()).findCandidates(text);

@@ -23,28 +23,33 @@ open class SimpleEmojiTextView @JvmOverloads constructor(
 
   override fun setText(text: CharSequence?, type: BufferType?) {
     bufferType = type
-    val candidates = if (isInEditMode) null else EmojiProvider.getCandidates(text)
-    if (SignalStore.settings().isPreferSystemEmoji || candidates == null || candidates.size() == 0) {
+    if (isInEditMode) {
       super.setText(Optional.ofNullable(text).orElse(""), type)
     } else {
-      val startDrawableSize: Int = compoundDrawables[0]?.let { it.intrinsicWidth + compoundDrawablePadding } ?: 0
-      val endDrawableSize: Int = compoundDrawables[1]?.let { it.intrinsicWidth + compoundDrawablePadding } ?: 0
-      val adjustedWidth: Int = width - startDrawableSize - endDrawableSize
+      EmojiProvider.getCandidates(text) {
+        if (SignalStore.settings().isPreferSystemEmoji || it == null || it.size() == 0) {
+          super.setText(Optional.ofNullable(text).orElse(""), type)
+        } else {
+          val startDrawableSize: Int = compoundDrawables[0]?.let { it.intrinsicWidth + compoundDrawablePadding } ?: 0
+          val endDrawableSize: Int = compoundDrawables[1]?.let { it.intrinsicWidth + compoundDrawablePadding } ?: 0
+          val adjustedWidth: Int = width - startDrawableSize - endDrawableSize
 
-      val newCandidates = if (isInEditMode) null else EmojiProvider.getCandidates(text)
-      val newText = if (newCandidates == null || newCandidates.size() == 0) {
-        text
-      } else {
-        EmojiProvider.emojify(newCandidates, text, this, false)
-      }
+          val newCandidates = if (isInEditMode) null else EmojiProvider.getCandidates(text)
+          val newText = if (newCandidates == null || newCandidates.size() == 0) {
+            text
+          } else {
+            EmojiProvider.emojify(newCandidates, text, this, false)
+          }
 
-      val newContent = if (width == 0 || maxLines == -1) {
-        newText
-      } else {
-        TextUtils.ellipsize(newText, paint, (adjustedWidth * maxLines).toFloat(), TextUtils.TruncateAt.END, false, null)
+          val newContent = if (width == 0 || maxLines == -1) {
+            newText
+          } else {
+            TextUtils.ellipsize(newText, paint, (adjustedWidth * maxLines).toFloat(), TextUtils.TruncateAt.END, false, null)
+          }
+          bufferType = BufferType.SPANNABLE
+          super.setText(newContent, type)
+        }
       }
-      bufferType = BufferType.SPANNABLE
-      super.setText(newContent, type)
     }
   }
 

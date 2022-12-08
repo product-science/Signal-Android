@@ -85,6 +85,12 @@ class EmojiSource(
     private val emojiLatch = CountDownLatch(1)
 
     @JvmStatic
+    val needToWait: Boolean
+      get() {
+        return emojiLatch.count > 0
+      }
+
+    @JvmStatic
     val latest: EmojiSource
       get() {
         emojiLatch.await()
