@@ -101,7 +101,7 @@ public class WebRtcCallActivity extends BaseActivity implements SafetyNumberChan
 
   private static final String TAG = Log.tag(WebRtcCallActivity.class);
 
-  private static final int STANDARD_DELAY_FINISH = 0;
+  private static final int STANDARD_DELAY_FINISH = 1000;
   private static final int VIBRATE_DURATION      = 50;
 
   public static final String ANSWER_ACTION   = WebRtcCallActivity.class.getCanonicalName() + ".ANSWER_ACTION";
