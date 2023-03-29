@@ -58,6 +58,7 @@ public class VoiceNoteMediaController implements DefaultLifecycleObserver {
   private boolean                                       isMediaBrowserCreationPostponed;
 
   private final MediaControllerCompatCallback mediaControllerCompatCallback = new MediaControllerCompatCallback();
+  private Runnable                            onConnectRunnable;
 
   public VoiceNoteMediaController(@NonNull FragmentActivity activity) {
     this(activity, false);
@@ -133,8 +134,6 @@ public class VoiceNoteMediaController implements DefaultLifecycleObserver {
     }
 
     ensureMediaBrowser();
-    mediaBrowser.disconnect();
-    mediaBrowser.connect();
   }
 
   @Override
@@ -145,9 +144,6 @@ public class VoiceNoteMediaController implements DefaultLifecycleObserver {
       MediaControllerCompat.getMediaController(activity).unregisterCallback(mediaControllerCompatCallback);
     }
 
-    if (mediaBrowser != null) {
-      mediaBrowser.disconnect();
-    }
   }
 
   @Override
@@ -185,15 +181,27 @@ public class VoiceNoteMediaController implements DefaultLifecycleObserver {
 
 
   public void startConsecutivePlayback(@NonNull Uri audioSlideUri, long messageId, double progress) {
-    startPlayback(audioSlideUri, messageId, -1, progress, false);
+    onConnectRunnable = () -> startPlayback(audioSlideUri, messageId, -1, progress, false);
+    if (mediaBrowser.isConnected()) {
+      mediaBrowser.disconnect();
+    }
+    mediaBrowser.connect();
   }
 
   public void startSinglePlayback(@NonNull Uri audioSlideUri, long messageId, double progress) {
-    startPlayback(audioSlideUri, messageId, -1, progress, true);
+    onConnectRunnable = () -> startPlayback(audioSlideUri, messageId, -1, progress, true);
+    if (mediaBrowser.isConnected()) {
+      mediaBrowser.disconnect();
+    }
+    mediaBrowser.connect();
   }
 
   public void startSinglePlaybackForDraft(@NonNull Uri draftUri, long threadId, double progress) {
-    startPlayback(draftUri, -1, threadId, progress, true);
+    onConnectRunnable = () -> startPlayback(draftUri, -1, threadId, progress, true);
+    if (mediaBrowser.isConnected()) {
+      mediaBrowser.disconnect();
+    }
+    mediaBrowser.connect();
   }
 
   /**
@@ -395,6 +403,11 @@ public class VoiceNoteMediaController implements DefaultLifecycleObserver {
       mediaController.registerCallback(mediaControllerCompatCallback);
 
       mediaControllerCompatCallback.onPlaybackStateChanged(mediaController.getPlaybackState());
+
+      if (onConnectRunnable != null) {
+        onConnectRunnable.run();
+        onConnectRunnable = null;
+      }
     }
 
     @Override
@@ -407,6 +420,7 @@ public class VoiceNoteMediaController implements DefaultLifecycleObserver {
     public void onConnectionFailed() {
       Log.d(TAG, "Voice note MediaBrowser connection failed.");
       cleanUpOldProximityWakeLockManager();
+      onConnectRunnable = null;
     }
 
     private void cleanUpOldProximityWakeLockManager() {
