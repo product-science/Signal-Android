@@ -1,5 +1,6 @@
 package org.thoughtcrime.securesms.keyvalue
 
+import android.annotation.SuppressLint
 import android.content.Context
 import android.content.SharedPreferences
 import android.preference.PreferenceManager
@@ -24,8 +25,8 @@ import org.whispersystems.signalservice.api.push.ACI
 import org.whispersystems.signalservice.api.push.PNI
 import org.whispersystems.signalservice.api.push.ServiceIds
 import org.whispersystems.signalservice.api.push.SignalServiceAddress
-import java.lang.IllegalStateException
 import java.security.SecureRandom
+import kotlin.time.Duration.Companion.days
 
 internal class AccountValues internal constructor(store: KeyValueStore) : SignalStoreValues(store) {
 
@@ -58,11 +59,20 @@ internal class AccountValues internal constructor(store: KeyValueStore) : Signal
     private const val KEY_PNI_NEXT_ONE_TIME_PREKEY_ID = "account.pni_next_one_time_prekey_id"
 
     @VisibleForTesting
+    const val KEY_ACCOUNT_DATA_REPORT = "account.data_report"
+
+    @VisibleForTesting
+    const val KEY_ACCOUNT_DATA_REPORT_DOWNLOAD_TIME = "account.data_report_download_time"
+
+    @VisibleForTesting
     const val KEY_E164 = "account.e164"
+
     @VisibleForTesting
     const val KEY_ACI = "account.aci"
+
     @VisibleForTesting
     const val KEY_PNI = "account.pni"
+
     @VisibleForTesting
     const val KEY_IS_REGISTERED = "account.is_registered"
   }
@@ -84,7 +94,7 @@ internal class AccountValues internal constructor(store: KeyValueStore) : Signal
       KEY_ACI_IDENTITY_PUBLIC_KEY,
       KEY_ACI_IDENTITY_PRIVATE_KEY,
       KEY_PNI_IDENTITY_PUBLIC_KEY,
-      KEY_PNI_IDENTITY_PRIVATE_KEY,
+      KEY_PNI_IDENTITY_PRIVATE_KEY
     )
   }
 
@@ -310,8 +320,36 @@ internal class AccountValues internal constructor(store: KeyValueStore) : Signal
     }
 
     if (previous && !registered) {
-      clearLocalCredentials(ApplicationDependencies.getApplication())
+      clearLocalCredentials()
     }
+  }
+
+  val accountDataReport: String?
+    get() = getString(KEY_ACCOUNT_DATA_REPORT, null)
+
+  fun setAccountDataReport(report: String, downloadTime: Long) {
+    store.beginWrite()
+      .putString(KEY_ACCOUNT_DATA_REPORT, report)
+      .putLong(KEY_ACCOUNT_DATA_REPORT_DOWNLOAD_TIME, downloadTime)
+      .apply()
+  }
+
+  fun hasAccountDataReport(): Boolean = store.containsKey(KEY_ACCOUNT_DATA_REPORT)
+
+  fun clearOldAccountDataReport(): Boolean {
+    return if (hasAccountDataReport() && (getLong(KEY_ACCOUNT_DATA_REPORT_DOWNLOAD_TIME, 0) + 30.days.inWholeMilliseconds) < System.currentTimeMillis()) {
+      deleteAccountDataReport()
+      true
+    } else {
+      false
+    }
+  }
+
+  fun deleteAccountDataReport() {
+    store.beginWrite()
+      .remove(KEY_ACCOUNT_DATA_REPORT)
+      .remove(KEY_ACCOUNT_DATA_REPORT_DOWNLOAD_TIME)
+      .apply()
   }
 
   val deviceName: String?
@@ -329,7 +367,7 @@ internal class AccountValues internal constructor(store: KeyValueStore) : Signal
   val isLinkedDevice: Boolean
     get() = !isPrimaryDevice
 
-  private fun clearLocalCredentials(context: Context) {
+  private fun clearLocalCredentials() {
     putString(KEY_SERVICE_PASSWORD, Util.getSecret(18))
 
     val newProfileKey = ProfileKeyUtil.createNew()
@@ -355,6 +393,8 @@ internal class AccountValues internal constructor(store: KeyValueStore) : Signal
   }
 
   /** Do not alter. If you need to migrate more stuff, create a new method. */
+  @SuppressLint("ApplySharedPref")
+  @Suppress("DEPRECATION")
   private fun migrateFromSharedPrefsV2(context: Context) {
     Log.i(TAG, "[V2] Migrating account values from shared prefs.")
 

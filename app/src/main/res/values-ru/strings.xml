@@ -14,6 +14,7 @@
   <!-- Removed by excludeNonTranslatables <string name="sms_export_url" translatable="false">https://support.signal.org/hc/articles/360007321171</string> -->
   <!-- Removed by excludeNonTranslatables <string name="signal_me_username_url" translatable="false">https://signal.me/#u/%1$s</string> -->
   <!-- Removed by excludeNonTranslatables <string name="signal_me_username_url_no_scheme" translatable="false">signal.me/#u/%1$s</string> -->
+  <!-- Removed by excludeNonTranslatables <string name="username_support_url" translatable="false">https://support.signal.org/hc/articles/5389476324250</string> -->
 
     <string name="yes">Да</string>
     <string name="no">Нет</string>
@@ -224,6 +225,8 @@
     <string name="ContactsCursorLoader_recent_chats">Недавние чаты</string>
     <string name="ContactsCursorLoader_contacts">Контакты</string>
     <string name="ContactsCursorLoader_groups">Группы</string>
+    <!-- Contact search header for individuals who the user has not started a conversation with but is in a group with -->
+    <string name="ContactsCursorLoader_group_members">Участники группы</string>
     <string name="ContactsCursorLoader_phone_number_search">Поиск по номеру телефона</string>
     <!-- Header for username search -->
     <string name="ContactsCursorLoader_find_by_username">Поиск по имени пользователя</string>
@@ -231,6 +234,10 @@
     <string name="ContactsCursorLoader_my_stories">Мои истории</string>
     <!-- Text for a button that brings up a bottom sheet to create a new story. -->
     <string name="ContactsCursorLoader_new">Новая</string>
+    <!-- Header for conversation search section labeled "Chats" -->
+    <string name="ContactsCursorLoader__chats">Чаты</string>
+    <!-- Header for conversation search section labeled "Messages" -->
+    <string name="ContactsCursorLoader__messages">Сообщения</string>
 
     <!-- ContactsDatabase -->
     <string name="ContactsDatabase_message_s">Сообщение %1$s</string>
@@ -360,7 +367,7 @@
 
     <string name="ConversationActivity_error_sending_media">Ошибка при отправке медиафайла</string>
 
-    <string name="ConversationActivity__reported_as_spam_and_blocked">Было сообщено о спаме и пользователь был заблокирован.</string>
+    <string name="ConversationActivity__reported_as_spam_and_blocked">Было сообщено о спаме, и пользователь был заблокирован.</string>
 
     <!-- Message shown when opening an SMS conversation with SMS disabled and they have unexported sms messages -->
     <string name="ConversationActivity__sms_messaging_is_currently_disabled_you_can_export_your_messages_to_another_app_on_your_phone">Обмен SMS-сообщениями в настоящее время отключён. Вы можете экспортировать сообщения в другое приложение на вашем телефоне.</string>
@@ -376,6 +383,15 @@
     <string name="ConversationActivity__invite_to_signal">Пригласить в Signal</string>
     <!-- Snackbar message shown after dismissing the full screen sms export megaphone indicating we\'ll do it again soon -->
     <string name="ConversationActivity__you_will_be_reminded_again_soon">Скоро вы снова получите напоминание об этом.</string>
+
+    <!-- Title for dialog shown when first sending formatted text -->
+    <string name="SendingFormattingTextDialog_title">Отправка отформатированного текста</string>
+    <!-- Message for dialog shown when first sending formatted text -->
+    <string name="SendingFormattingTextDialog_message">Некоторые пользователи могут использовать версию Signal, которая не поддерживает отформатированный текст. Они не будут видеть изменения форматирования, которые вы внесли в своё сообщение.</string>
+    <!-- Button text for confirming they\'d like to send the message with formatting after seeing warning. -->
+    <string name="SendingFormattingTextDialog_send_anyway_button">Всё равно отправить</string>
+    <!-- Button text for canceling sending the message with formatting after seeing warning. -->
+    <string name="SendingFormattingTextDialog_cancel_send_button">Отменить</string>
 
     <!-- ConversationAdapter -->
     <plurals name="ConversationAdapter_n_unread_messages">
@@ -576,14 +592,23 @@
     <!-- ConversationTypingView -->
     <string name="ConversationTypingView__plus_d">+%1$d</string>
 
+    <!-- Title for a reminder bottom sheet to users who have re-registered that they need to go back to re-link their devices. -->
+    <string name="RelinkDevicesReminderFragment__relink_your_devices">Привяжите свои устройства заново</string>
+    <!-- Description for a reminder bottom sheet to users who have re-registered that they need to go back to re-link their devices. -->
+    <string name="RelinkDevicesReminderFragment__the_devices_you_added_were_unlinked">Добавленные вами устройства были отвязаны, когда ваше устройство было снято с регистрации. Перейдите в «Настройки», чтобы заново привязать все устройства.</string>
+    <!-- Button label for the re-link devices bottom sheet reminder to navigate to the Devices page in the settings. -->
+    <string name="RelinkDevicesReminderFragment__open_settings">Открыть настройки</string>
+    <!-- Button label for the re-link devices bottom sheet reminder to dismiss the pop up. -->
+    <string name="RelinkDevicesReminderFragment__later">Позже</string>
+
     <!-- CreateGroupActivity -->
     <string name="CreateGroupActivity__select_members">Выберите участников</string>
 
     <!-- ConversationListFilterPullView -->
     <!-- Note in revealable view before fully revealed -->
-    <string name="ConversationListFilterPullView__pull_down_to_filter">Pull down to filter</string>
+    <string name="ConversationListFilterPullView__pull_down_to_filter">Проведите пальцем вниз, чтобы отфильтровать</string>
     <!-- Note in revealable view after fully revealed -->
-    <string name="ConversationListFilterPullView__release_to_filter">Release to filter</string>
+    <string name="ConversationListFilterPullView__release_to_filter">Отпустите, чтобы отфильтровать</string>
 
     <!-- CreateProfileActivity -->
     <string name="CreateProfileActivity__profile">Профиль</string>
@@ -633,6 +658,8 @@
     <string name="BackupsPreferenceFragment__create_backup">Создать резервную копию</string>
     <string name="BackupsPreferenceFragment__last_backup">Последняя резервная копия: %1$s</string>
     <string name="BackupsPreferenceFragment__backup_folder">Папка резервных копий</string>
+    <!-- Title for a preference item allowing the user to selected the hour of the day when their chats are backed up. -->
+    <string name="BackupsPreferenceFragment__backup_time">Время резервного копирования</string>
     <string name="BackupsPreferenceFragment__verify_backup_passphrase">Проверить парольную фразу резервной копии</string>
     <string name="BackupsPreferenceFragment__test_your_backup_passphrase">Испытайте парольную фразу своей резервной копии и убедитесь, что она работает</string>
     <string name="BackupsPreferenceFragment__turn_on">Включить</string>
@@ -662,6 +689,53 @@
     <string name="DateUtils_minutes_ago">%1$dм</string>
     <string name="DateUtils_today">Сегодня</string>
     <string name="DateUtils_yesterday">Вчера</string>
+    <!-- When scheduling a message, %1$s replaced with either today, tonight, or tomorrow. %2$s replaced with the time. e.g. Tonight at 9:00pm -->
+    <string name="DateUtils_schedule_at">%1$s в %2$s</string>
+    <!-- Used when getting a time in the future. For example, Tomorrow at 9:00pm -->
+    <string name="DateUtils_tomorrow">Завтра</string>
+    <!-- Used in the context: Tonight at 9:00pm for example. Specifically this is after 7pm -->
+    <string name="DateUtils_tonight">Сегодня вечером</string>
+
+    <!-- Scheduled Messages -->
+    <!-- Title for dialog that shows all the users scheduled messages for a chat -->
+    <string name="ScheduledMessagesBottomSheet__schedules_messages">Запланированные сообщения</string>
+    <!-- Option when scheduling a message to select a specific date and time to send a message -->
+    <string name="ScheduledMessages_pick_time">Выберите дату и время</string>
+    <!-- Title for dialog explaining to users how the scheduled messages work -->
+    <string name="ScheduleMessageFTUXBottomSheet__title">Запланированные сообщения</string>
+    <!-- Disclaimer text for scheduled messages explaining to users that the scheduled messages will only send if connected to the internet -->
+    <string name="ScheduleMessageFTUXBottomSheet__disclaimer">При отправке запланированного сообщения убедитесь, что ваше устройство будет включено и подключено к интернету в момент отправки. Если нет, ваше сообщение будет отправлено, когда устройство подключится снова.</string>
+    <!-- Confirmation button text acknowledging the user understands the disclaimer -->
+    <string name="ScheduleMessageFTUXBottomSheet__okay">Хорошо</string>
+    <!-- Title for section asking users to allow alarm permissions for scheduled messages -->
+    <string name="ScheduleMessageFTUXBottomSheet_enable_title">Чтобы включить планирование сообщений:</string>
+    <!-- Title for dialog asking users to allow alarm permissions for scheduled messages -->
+    <string name="ReenableScheduleMessagesDialogFragment_reenable_title">Чтобы снова включить планирование сообщений:</string>
+    <!-- Title of dialog with a calendar to select the date the user wants to schedule a message. -->
+    <string name="ScheduleMessageTimePickerBottomSheet__select_date_title">Выберите дату</string>
+    <!-- Title of dialog with a clock to select the time at which the user wants to schedule a message. -->
+    <string name="ScheduleMessageTimePickerBottomSheet__select_time_title">Выберите время</string>
+    <!-- Title of dialog that allows user to set the time and day that their message will be sent -->
+    <string name="ScheduleMessageTimePickerBottomSheet__dialog_title">Запланировать сообщение</string>
+    <!-- Text for confirmation button when scheduling messages that allows the user to confirm and schedule the sending time -->
+    <string name="ScheduleMessageTimePickerBottomSheet__schedule_send">Запланировать отправку</string>
+    <!-- Disclaimer in message scheduling dialog. %1$s replaced with a GMT offset (e.g. GMT-05:00), and %2$s is replaced with the time zone name (e.g. Eastern Standard Time) -->
+    <string name="ScheduleMessageTimePickerBottomSheet__timezone_disclaimer">Время всегда в (%1$s) %2$s</string>
+    <!-- Warning dialog message text shown when select time for scheduled send is in the past resulting in an immediate send if scheduled. -->
+    <string name="ScheduleMessageTimePickerBottomSheet__select_time_in_past_dialog_warning">Выбранное время уже прошло. Сообщение будет отправлено немедленно.</string>
+    <!-- Positive button text for warning dialog shown when scheduled send is in the past -->
+    <string name="ScheduleMessageTimePickerBottomSheet__select_time_in_past_dialog_positive_button">Отправить немедленно</string>
+
+    <!-- Context menu option to send a scheduled message now -->
+    <string name="ScheduledMessagesBottomSheet_menu_send_now">Отправить сейчас</string>
+    <!-- Context menu option to reschedule a selected message -->
+    <string name="ScheduledMessagesBottomSheet_menu_reschedule">Перепланировать</string>
+    <!-- Button in dialog asking user if they are sure they want to delete the selected scheduled message -->
+    <string name="ScheduledMessagesBottomSheet_delete_dialog_action">Удалить</string>
+    <!-- Button in dialog asking user if they are sure they want to delete the selected scheduled message -->
+    <string name="ScheduledMessagesBottomSheet_delete_dialog_message">Удалить выбранное запланированное сообщение?</string>
+    <!-- Progress message shown while deleting selected scheduled message -->
+    <string name="ScheduledMessagesBottomSheet_deleting_progress_message">Удаление запланированного сообщения…</string>
 
     <!-- DecryptionFailedDialog -->
     <string name="DecryptionFailedDialog_chat_session_refreshed">Сессия чата обновлена</string>
@@ -974,6 +1048,16 @@
     <string name="ManageProfileFragment__username_created">Имя пользователя создано</string>
     <!-- Snackbar message after copying username -->
     <string name="ManageProfileFragment__username_copied">Имя пользователя скопировано</string>
+    <!-- Snackbar message after network failure while trying to delete username -->
+    <string name="ManageProfileFragment__couldnt_delete_username">Не удалось удалить имя пользователя. Попробуйте ещё раз позже.</string>
+    <!-- Snackbar message after successful deletion of username -->
+    <string name="ManageProfileFragment__username_deleted">Имя пользователя удалено</string>
+
+    <!-- UsernameOutOfSyncReminder -->
+    <!-- Displayed above the conversation list when a user needs to address an issue with their username -->
+    <string name="UsernameOutOfSyncReminder__something_went_wrong">Что-то пошло не так с вашим именем пользователя, оно больше не закреплено за вашей учётной записью. Вы можете попробовать установить его снова или выбрать новое.</string>
+    <!-- Action text to navigate user to manually fix the issue with their username -->
+    <string name="UsernameOutOfSyncReminder__fix_now">Исправить сейчас</string>
 
 
     <!-- ManageRecipientActivity -->
@@ -1197,8 +1281,8 @@
     <string name="Megaphones_new_group">Новая группа</string>
     <string name="Megaphones_invite_friends">Пригласить друзей</string>
     <string name="Megaphones_use_sms">Использовать SMS</string>
-    <string name="Megaphones_appearance">Внешний вид</string>
-    <string name="Megaphones_add_photo">Добавить фото</string>
+    <string name="Megaphones_chat_colors">Цвета чата</string>
+    <string name="Megaphones_add_a_profile_photo">Добавьте фото профиля</string>
 
     <!-- Title of a bottom sheet to render messages that all quote a specific message -->
     <string name="MessageQuotesBottomSheet_replies">Ответы</string>
@@ -1248,11 +1332,29 @@
     <string name="MessageRecord_left_group">Вы покинули группу.</string>
     <string name="MessageRecord_you_updated_group">Вы обновили группу.</string>
     <string name="MessageRecord_the_group_was_updated">Группа была обновлена.</string>
-    <string name="MessageRecord_you_called_date">Вы звонили · %1$s</string>
-    <string name="MessageRecord_missed_audio_call_date">Пропущенный аудиозвонок · %1$s</string>
-    <string name="MessageRecord_missed_video_call_date">Пропущенный видеозвонок · %1$s</string>
+    <!-- Update message shown when placing an outgoing 1:1 voice/audio call and it\'s answered by the other party -->
+    <string name="MessageRecord_outgoing_voice_call">Исходящий голосовой звонок</string>
+    <!-- Update message shown when placing an outgoing 1:1 video call and it\'s answered by the other party -->
+    <string name="MessageRecord_outgoing_video_call">Исходящий видеозвонок</string>
+    <!-- Update message shown when placing an outgoing 1:1 voice/audio call and it\'s not answered by the other party -->
+    <string name="MessageRecord_unanswered_voice_call">Неотвеченный голосовой звонок</string>
+    <!-- Update message shown when placing an outgoing 1:1 video call and it\'s not answered by the other party -->
+    <string name="MessageRecord_unanswered_video_call">Неотвеченный исходящий видеозвонок</string>
+    <!-- Update message shown when receiving an incoming 1:1 voice/audio call and it\'s answered -->
+    <string name="MessageRecord_incoming_voice_call">Входящий голосовой звонок</string>
+    <!-- Update message shown when receiving an incoming 1:1 video call and answered -->
+    <string name="MessageRecord_incoming_video_call">Входящий видеозвонок</string>
+    <!-- Update message shown when receiving an incoming 1:1 voice/audio call and not answered -->
+    <string name="MessageRecord_missed_voice_call">Пропущенный голосовой звонок</string>
+    <!-- Update message shown when receiving an incoming 1:1 video call and not answered -->
+    <string name="MessageRecord_missed_video_call">Пропущенный видеозвонок</string>
+    <!-- Update message shown when receiving an incoming 1:1 voice/audio call and explicitly declined -->
+    <string name="MessageRecord_you_declined_a_voice_call">Вы отклонили голосовой звонок</string>
+    <!-- Update message shown when receiving an incoming 1:1 video call and explicitly declined -->
+    <string name="MessageRecord_you_declined_a_video_call">Вы отклонили видеозвонок</string>
+    <!-- Call update formatter string to place the update message next to a time stamp. e.g., \'Incoming voice call · 11:11am\' -->
+    <string name="MessageRecord_call_message_with_date">%1$s · %2$s</string>
     <string name="MessageRecord_s_updated_group">%1$s обновил(-а) группу.</string>
-    <string name="MessageRecord_s_called_you_date">%1$s звонил(-а) вам · %2$s</string>
     <string name="MessageRecord_s_joined_signal">%1$s теперь в Signal!</string>
     <string name="MessageRecord_you_disabled_disappearing_messages">Вы отключили исчезающие сообщения.</string>
     <string name="MessageRecord_s_disabled_disappearing_messages">%1$s отключил(-а) исчезающие сообщения.</string>
@@ -1456,10 +1558,12 @@
     <string name="MessageRecord_s_changed_their_phone_number">%1$s изменил(-а) свой номер телефона.</string>
     <!-- Update item message shown in the release channel when someone is already a sustainer so we ask them if they want to boost. -->
     <string name="MessageRecord_like_this_new_feature_help_support_signal_with_a_one_time_donation">Нравится эта новая функция? Помогите поддержать Signal единовременным пожертвованием.</string>
-    <!-- Update item message shown when we merge two threads together -->
+    <!-- Update item message shown when we merge two threads together. First placeholder is a name, second placeholder is a phone number. -->
     <string name="MessageRecord_your_message_history_with_s_and_their_number_s_has_been_merged">Ваши истории сообщений с %1$s и его/её номером %2$s были объединены.</string>
-    <!-- Update item message shown when we merge two threads together and we don\'t know the phone number of the other thread -->
+    <!-- Update item message shown when we merge two threads together and we don\'t know the phone number of the other thread. The placeholder is a person\'s name. -->
     <string name="MessageRecord_your_message_history_with_s_and_another_chat_has_been_merged">Ваши истории сообщений с %1$s и другим чатом, который принадлежал ему/ей, были объединены.</string>
+    <!-- Update item message shown when you find out a phone number belongs to a person you had a conversation with. First placeholder is a phone number, second placeholder is a name. -->
+    <string name="MessageRecord_s_belongs_to_s">%1$s принадлежит %2$s</string>
     <!-- Message to notify sender that activate payments request has been sent to the recipient -->
     <string name="MessageRecord_you_sent_request">Вы отправили %1$s запрос на активацию платежей</string>
     <!-- Request message from recipient to activate payments -->
@@ -1516,7 +1620,7 @@
     <string name="MessageRequestBottomView_do_you_want_to_let_s_message_you_wont_receive_any_messages_until_you_unblock_them">Разрешить %1$s отправлять вам сообщения и открыть ваше имя и фото этому человеку? Вы не получите никаких сообщений, пока не разблокируете его.</string>
     <!-- Shown in message request flow. Describes what will happen if you unblock an SMS user -->
     <string name="MessageRequestBottomView_do_you_want_to_let_s_message_you_wont_receive_any_messages_until_you_unblock_them_SMS">Разрешить %1$s отправлять вам сообщения? Вы не получите никаких сообщений, пока не разблокируете этого человека.</string>
-    <string name="MessageRequestBottomView_get_updates_and_news_from_s_you_wont_receive_any_updates_until_you_unblock_them">Получать обновления и новости от %1$s? Вы не будете получать никаких сообщений, пока не разблокируете.</string>
+    <string name="MessageRequestBottomView_get_updates_and_news_from_s_you_wont_receive_any_updates_until_you_unblock_them">Получать обновления и новости от %1$s? Вы не будете получать никаких сообщений, пока не разблокируете этого человека.</string>
     <string name="MessageRequestBottomView_continue_your_conversation_with_this_group_and_share_your_name_and_photo">Продолжить ваш разговор с этой группой и открыть ваше имя и фото её участникам?</string>
     <string name="MessageRequestBottomView_upgrade_this_group_to_activate_new_features">Обновите эту группу, чтобы активировать такие новые функции, как @упоминания и администраторы групп. Участники, которые ещё не открыли свои имена или фото этой группе получат приглашение присоединиться.</string>
     <string name="MessageRequestBottomView_this_legacy_group_can_no_longer_be_used">Эта Старая группа больше не может быть использована, потому что она слишком большая. Максимальный размер группы — %1$d.</string>
@@ -1524,7 +1628,7 @@
     <string name="MessageRequestBottomView_do_you_want_to_join_this_group_they_wont_know_youve_seen_their_messages_until_you_accept">Присоединиться к этой группе и открыть ваше имя и фото её участникам? Они не узнают, что вы видели их сообщения, пока вы не примете запрос.</string>
     <string name="MessageRequestBottomView_do_you_want_to_join_this_group_you_wont_see_their_messages">Присоединиться к этой группе и открыть ваше имя и фото её участникам? Вы не увидите их сообщения, пока не примете запрос.</string>
     <string name="MessageRequestBottomView_join_this_group_they_wont_know_youve_seen_their_messages_until_you_accept">Присоединиться к этой группе? Её участники не узнают, что вы видели их сообщения, пока вы не примете запрос.</string>
-    <string name="MessageRequestBottomView_unblock_this_group_and_share_your_name_and_photo_with_its_members">Разблокировать эту группу и открыть ваше имя и фото её участникам? Вы не будете получать сообщений, пока не разблокируете эту группу.</string>
+    <string name="MessageRequestBottomView_unblock_this_group_and_share_your_name_and_photo_with_its_members">Разблокировать эту группу и открыть ваше имя и фото её участникам? Вы не будете получать сообщения, пока не разблокируете эту группу.</string>
   <!-- Removed by excludeNonTranslatables <string name="MessageRequestBottomView_legacy_learn_more_url" translatable="false">https://support.signal.org/hc/articles/360007459591</string> -->
     <string name="MessageRequestProfileView_view">Просмотреть</string>
     <string name="MessageRequestProfileView_member_of_one_group">Состоит в %1$s</string>
@@ -1637,9 +1741,20 @@
     <string name="PinRestoreLockedFragment_create_new_pin">Создать новый PIN-код</string>
   <!-- Removed by excludeNonTranslatables <string name="PinRestoreLockedFragment_learn_more_url" translatable="false">https://support.signal.org/hc/articles/360007059792</string> -->
 
+    <!-- Dialog button text indicating user wishes to send an sms code isntead of skipping it -->
+    <string name="ReRegisterWithPinFragment_send_sms_code">Отправить SMS-код</string>
+    <!-- Email subject used when user contacts support about an issue with the reregister flow. -->
+    <string name="ReRegisterWithPinFragment_support_email_subject">Регистрация в Signal - Нужна помощь с Пин-кодом повторной регистрации для Android</string>
+    <!-- Dialog message shown in reregister flow when tapping a informational button to to learn about pins or contact support for help -->
+    <string name="ReRegisterWithPinFragment_need_help_local">Ваш Пин-код — это код из %1$d+ символов, созданный вами, который может быть цифровым или буквенно-цифровым.\n\nЕсли вы забыли свой Пин-код, вы можете создать новый.</string>
+    <!-- Dialog message shown in reregister flow when user requests to skip this flow and return to the normal flow -->
+    <string name="ReRegisterWithPinFragment_skip_local">Если вы не помните свой Пин-код, то можете создать новый.</string>
+    <!-- Dialog message shown in reregister flow when user uses up all of their guesses for their pin and we are going to move on -->
+    <string name="ReRegisterWithPinFragment_out_of_guesses_local">Вы использовали все попытки ввести Пин-код, но всё ещё можете получить доступ к своей учётной записи Signal, создав новый Пин-код.</string>
+
     <!-- PinOptOutDialog -->
     <string name="PinOptOutDialog_warning">Предупреждение</string>
-    <string name="PinOptOutDialog_if_you_disable_the_pin_you_will_lose_all_data">Если вы отключите PIN-код, то при переустановке Signal потеряете все данные, если заранее вручную не создадите резервную копию. При отключённом PIN-коде нельзя будет включить блокировку регистрации.</string>
+    <string name="PinOptOutDialog_if_you_disable_the_pin_you_will_lose_all_data">Если вы отключите Пин-код, то при переустановке Signal потеряете все данные, если заранее вручную не создадите резервную копию. При отключённом Пин-коде нельзя будет включить блокировку регистрации.</string>
     <string name="PinOptOutDialog_disable_pin">Отключить PIN-код</string>
 
     <!-- RatingManager -->
@@ -1767,19 +1882,17 @@
         <item quantity="other">%1$s, %2$s и ещё %3$d человек в этом звонке</item>
     </plurals>
 
-    <!-- Toggle label with hyphenation. Translation can use soft hyphen - Unicode U+00AD -->
-    <string name="WebRtcCallView__flip">Перекл. камеру</string>
-    <!-- Toggle label with hyphenation. Translation can use soft hyphen - Unicode U+00AD -->
-    <string name="WebRtcCallView__speaker">Громкая связь</string>
-    <!-- Toggle label with hyphenation. Translation can use soft hyphen - Unicode U+00AD -->
-    <string name="WebRtcCallView__camera">Камера</string>
-    <!-- Toggle label with hyphenation. Translation can use soft hyphen - Unicode U+00AD -->
-    <string name="WebRtcCallView__unmute">Вкл. микрофон</string>
-    <!-- Toggle label with hyphenation. Translation can use soft hyphen - Unicode U+00AD -->
-    <string name="WebRtcCallView__mute">Откл. микрофон</string>
-    <!-- Toggle label with hyphenation. Translation can use soft hyphen - Unicode U+00AD -->
-    <string name="WebRtcCallView__ring">Звонить</string>
-    <!-- Label with hyphenation. Translation can use soft hyphen - Unicode U+00AD -->
+    <!-- Toggle content description for toggling camera direction  -->
+    <string name="WebRtcCallView__toggle_camera_direction">Toggle camera direction</string>
+    <!-- Toggle content description for toggling audio output  -->
+    <string name="WebRtcCallView__toggle_speaker">Toggle speaker</string>
+    <!-- Toggle content description for toggling camera state  -->
+    <string name="WebRtcCallView__toggle_camera">Toggle camera</string>
+    <!-- Toggle content description for toggling mute state  -->
+    <string name="WebRtcCallView__toggle_mute">Toggle mute</string>
+    <!-- Toggle content description for toggling group ring state  -->
+    <string name="WebRtcCallView__toggle_ring">Toggle ring</string>
+    <!-- Content description for end-call button -->
     <string name="WebRtcCallView__end_call">Завершить звонок</string>
 
     <!-- CallParticipantsListDialog -->
@@ -1796,7 +1909,7 @@
     <string name="CallParticipantView__you_wont_receive_their_audio_or_video">Вы не будете получать аудио и видео этого участника, и он не будет получать ваши.</string>
     <string name="CallParticipantView__cant_receive_audio_video_from_s">Невозможно получать аудио и видео от %1$s</string>
     <string name="CallParticipantView__cant_receive_audio_and_video_from_s">Невозможно получать аудио и видео от %1$s</string>
-    <string name="CallParticipantView__this_may_be_Because_they_have_not_verified_your_safety_number_change">Возможно, это из-за того, что этот участник не подтвердил изменение вашего кода безопасности, что есть какая-то проблема с его устройством или что он вас заблокировал.</string>
+    <string name="CallParticipantView__this_may_be_Because_they_have_not_verified_your_safety_number_change">Возможно, это из-за того, что этот участник не подтвердил изменение вашего кода безопасности, или есть какая-то проблема с его устройством, или он вас заблокировал.</string>
 
     <!-- CallToastPopupWindow -->
     <string name="CallToastPopupWindow__swipe_to_view_screen_share">Проведите, чтобы просмотреть показ экрана</string>
@@ -1816,8 +1929,7 @@
     <string name="RegistrationActivity_select_your_country">Выберите вашу страну</string>
     <string name="RegistrationActivity_you_must_specify_your_country_code">Необходимо указать код страны
     </string>
-    <string name="RegistrationActivity_you_must_specify_your_phone_number">Необходимо указать номер телефона
-    </string>
+    <string name="RegistrationActivity_please_enter_a_valid_phone_number_to_register">Пожалуйста, введите корректный номер телефона, чтобы зарегистрироваться.</string>
     <string name="RegistrationActivity_invalid_number">Неверный номер</string>
     <string name="RegistrationActivity_the_number_you_specified_s_is_invalid">Указанный вами номер (%1$s) недействителен.
     </string>
@@ -1834,11 +1946,18 @@
     <string name="RegistrationActivity_signal_needs_access_to_your_contacts_and_media_in_order_to_connect_with_friends">Signal необходим доступ к вашим контактам и медиафайлам, чтобы помочь вам связаться с друзьями и отправлять сообщения. Ваши контакты загружаются с помощью технологии конфиденциального обнаружения контактов Signal, которая использует сквозное шифрование, поэтому ваши контакты никогда не видны сервису Signal.</string>
     <string name="RegistrationActivity_signal_needs_access_to_your_contacts_in_order_to_connect_with_friends">Signal необходим доступ к вашим контактам, чтобы помочь вам связаться с друзьями. Ваши контакты загружаются с помощью технологии конфиденциального обнаружения контактов Signal, которая использует сквозное шифрование, поэтому ваши контакты никогда не видны сервису Signal.</string>
     <string name="RegistrationActivity_rate_limited_to_service">Вы сделали слишком много попыток зарегистрировать этот номер. Пожалуйста, попробуйте ещё раз позже.</string>
+    <!--    During registration, if the user attempts (and fails) to register, we display this error message with a number of minutes timer they are allowed to try again.-->
+    <string name="RegistrationActivity_rate_limited_to_try_again">Вы сделали слишком много попыток зарегистрировать этот номер. Пожалуйста, попробуйте ещё раз через %1$s.</string>
     <string name="RegistrationActivity_unable_to_connect_to_service">Не удается подключиться к сервису. Пожалуйста, проверьте подключение к сети и повторите попытку.</string>
     <string name="RegistrationActivity_non_standard_number_format">Нестандартный номер телефона</string>
     <string name="RegistrationActivity_the_number_you_entered_appears_to_be_a_non_standard">Номер, который вы ввели (%1$s), похоже, не в стандартном формате.\n\nВы имели в виду %2$s?</string>
     <string name="RegistrationActivity_signal_android_phone_number_format">Signal Android - Формат номера телефона</string>
+    <!--    Small "toast" notification to the user confirming that they have requested a new code via voice call.-->
     <string name="RegistrationActivity_call_requested">Звонок запрошен</string>
+    <!--    Small "toast" notification to the user confirming that they have requested a new code via SMS.-->
+    <string name="RegistrationActivity_sms_requested">SMS запрошено</string>
+    <!--    Small "toast" notification to the user confirming that they have requested a new code (through an unspecified channel).-->
+    <string name="RegistrationActivity_code_requested">Код подтверждения запрошен</string>
     <plurals name="RegistrationActivity_debug_log_hint">
         <item quantity="one">Вы в %1$d шаге от отправки журнала отладки.</item>
         <item quantity="few">Вы в %1$d шагах от отправки журнала отладки.</item>
@@ -1849,15 +1968,27 @@
     <string name="RegistrationActivity_next">Далее</string>
     <string name="RegistrationActivity_continue">Продолжить</string>
     <string name="RegistrationActivity_take_privacy_with_you_be_yourself_in_every_message">Возьмите\nконфиденциальность\nс собой.\nБудьте собой в каждом сообщении.</string>
-    <string name="RegistrationActivity_enter_your_phone_number_to_get_started">Введите свой номер телефона, чтобы начать</string>
     <string name="RegistrationActivity_enter_your_phone_number">Введите свой номер телефона</string>
-    <string name="RegistrationActivity_you_will_receive_a_verification_code">Вы получите код подтверждения. Вашим оператором может взиматься плата за входящее SMS.</string>
+    <string name="RegistrationActivity_you_will_receive_a_verification_code">Вы получите код подтверждения.\nВашим оператором может взиматься плата за входящее SMS.</string>
     <string name="RegistrationActivity_enter_the_code_we_sent_to_s">Введите код, который мы отправили на %1$s</string>
     <string name="RegistrationActivity_make_sure_your_phone_has_a_cellular_signal">Убедитесь, что ваш телефон находится в зоне действия сети и сможет принять SMS или звонок</string>
 
     <string name="RegistrationActivity_phone_number_description">Номер телефона</string>
     <string name="RegistrationActivity_country_code_description">Код страны</string>
+    <string name="RegistrationActivity_country_code_hint">Страна</string>
     <string name="RegistrationActivity_call">Позвонить</string>
+    <string name="RegistrationActivity_verification_code">Код подтверждения</string>
+    <string name="RegistrationActivity_resend_code">Отправить код ещё раз</string>
+    <!--    A title for a bottom sheet dialog offering to help a user having trouble entering their verification code.-->
+    <string name="RegistrationActivity_support_bottom_sheet_title">Возникли проблемы с регистрацией?</string>
+    <!--    A list of suggestions to try for a user having trouble entering their verification code.-->
+    <string name="RegistrationActivity_support_bottom_sheet_body_suggestions">• Убедитесь, что на вашем телефоне есть сигнал сотовой связи для приема SMS или звонка\n • Подтвердите, что можете принять телефонный звонок на номер\n • Проверьте правильность введённого номера телефона.</string>
+    <!--    A call to action for a user having trouble entering the verification to seek further help. -->
+    <string name="RegistrationActivity_support_bottom_sheet_body_call_to_action">Для получения дополнительной информации выполните следующие шаги для устранения неполадок или свяжитесь с поддержкой</string>
+    <!--    A clickable piece of text that will take the user to our website with additional suggestions.-->
+    <string name="RegistrationActivity_support_bottom_sheet_cta_troubleshooting_steps_substring">следующие шаги для устранения неполадок</string>
+    <!--    A clickable piece of text that will pre-fill a request for support email in the user\'s email app.-->
+    <string name="RegistrationActivity_support_bottom_sheet_cta_contact_support_substring">Связаться с поддержкой</string>
 
     <!-- RegistrationLockV2Dialog -->
     <string name="RegistrationLockV2Dialog_turn_on_registration_lock">Включить блокировку регистрации?</string>
@@ -1979,10 +2110,6 @@
     <string name="ThreadRecord_left_the_group">Вы покинули группу</string>
     <string name="ThreadRecord_secure_session_reset">Защищённый сеанс сброшен.</string>
     <string name="ThreadRecord_draft">Черновик:</string>
-    <string name="ThreadRecord_called">Вы звонили</string>
-    <string name="ThreadRecord_called_you">Звонил(-а) вам</string>
-    <string name="ThreadRecord_missed_audio_call">Пропущенный аудиозвонок</string>
-    <string name="ThreadRecord_missed_video_call">Пропущенный видеозвонок</string>
     <string name="ThreadRecord_media_message">Медиа-сообщение</string>
     <string name="ThreadRecord_sticker">Стикер</string>
     <string name="ThreadRecord_view_once_photo">Одноразовое фото</string>
@@ -2015,17 +2142,23 @@
     <string name="ThreadRecord_video">Видео</string>
     <string name="ThreadRecord_chat_session_refreshed">Сессия чата обновлена</string>
     <!-- Displayed in the notification when the user is sent a gift -->
-    <string name="ThreadRecord__you_received_a_gift">Вы получили подарок</string>
+    <string name="ThreadRecord__s_donated_for_you">%1$s пожертвовал(-а) за вас</string>
     <!-- Displayed in the notification when the user sends a gift -->
-    <string name="ThreadRecord__you_sent_a_gift">Вы отправили подарок</string>
+    <string name="ThreadRecord__you_donated_for_s">Вы пожертвовали за %1$s</string>
     <!-- Displayed in the notification when the user has opened a received gift -->
-    <string name="ThreadRecord__you_redeemed_a_gift_badge">Вы приняли значок, полученный в подарок</string>
+    <string name="ThreadRecord__you_redeemed_a_badge">Вы приняли значок</string>
     <!-- Displayed in the conversation list when someone reacted to your story -->
     <string name="ThreadRecord__reacted_s_to_your_story">Отреагировал(-а) %1$s на вашу историю</string>
     <!-- Displayed in the conversation list when you reacted to someone\'s story -->
     <string name="ThreadRecord__reacted_s_to_their_story">Отреагировал(-а) %1$s на их историю</string>
     <!-- Displayed in the conversation list when your most recent message is a payment to or from the person the conversation is with -->
     <string name="ThreadRecord_payment">Платёж</string>
+    <!-- Displayed in the conversation list when your only message in a conversation is a scheduled send. -->
+    <string name="ThreadRecord_scheduled_message">Запланированное сообщение</string>
+    <!--  Displayed in the conversation list when your message history has been merged -->
+    <string name="ThreadRecord_message_history_has_been_merged">История ваших сообщений была объединена</string>
+    <!--  Displayed in the conversation list when identities have been merged. The first placeholder is a phone number, and the second is a person\'s name -->
+    <string name="ThreadRecord_s_belongs_to_s">%1$s принадлежит %2$s</string>
 
     <!-- UpdateApkReadyListener -->
     <string name="UpdateApkReadyListener_Signal_update">Обновление Signal</string>
@@ -2127,18 +2260,26 @@
     <!-- All media preview title when viewing media sent by another recipient to you (allows changing of \'You\' based on context) -->
     <string name="MediaPreviewActivity_s_to_you">%1$s отправил(-а) вам</string>
     <string name="MediaPreviewActivity_media_no_longer_available">Медиафайл больше не доступен.</string>
+    <!-- Notifying the user that the device has encountered a technical issue and is unable to render a video. -->
+    <string name="MediaPreviewActivity_unable_to_play_media">Не удалось воспроизвести медиафайл.</string>
     <string name="MediaPreviewActivity_error_finding_message">Ошибка при поиске сообщения</string>
     <string name="MediaPreviewActivity_cant_find_an_app_able_to_share_this_media">Не найдено приложение, в котором можно поделиться этим медиафайлом.</string>
     <string name="MediaPreviewActivity_dismiss_due_to_error">Закрыть</string>
     <string name="MediaPreviewFragment_edit_media_error">Ошибка медиафайла</string>
     <!-- This is displayed as a toast notification when we encounter an error deleting a message, including potentially on other people\'s devices -->
-    <string name="MediaPreviewFragment_media_delete_error">Ошибка при удалении сообщения, сообщение может все еще существовать</string>
+    <string name="MediaPreviewFragment_media_delete_error">Ошибка при удалении сообщения, сообщение может всё ещё существовать</string>
+    <!-- A suffix to be attached to truncated captions that the user may tap onto to view the entire text caption -->
+    <string name="MediaPreviewFragment_see_more">%1$s… <b>Читать далее</b></string>
 
     <!-- MessageNotifier -->
     <string name="MessageNotifier_d_new_messages_in_d_conversations">%1$d новых сообщений в %2$d разговорах</string>
     <string name="MessageNotifier_most_recent_from_s">Последнее от: %1$s</string>
     <string name="MessageNotifier_locked_message">Сообщение скрыто</string>
     <string name="MessageNotifier_message_delivery_failed">Доставка сообщения не удалась.</string>
+    <!-- Shown in a notification when a story the user tries to send fails to be sent -->
+    <string name="MessageNotifier_story_delivery_failed">История не отправлена</string>
+    <!-- Shown as notification title for when a notification about a story sent to a group story %1$s replaced with the group name -->
+    <string name="MessageNotifier_group_story_title">Вы отправили %1$s</string>
     <string name="MessageNotifier_failed_to_deliver_message">Не удалось доставить сообщение.</string>
     <string name="MessageNotifier_error_delivering_message">Ошибка при доставке сообщения.</string>
     <string name="MessageNotifier_message_delivery_paused">Доставка сообщений приостановлена.</string>
@@ -2159,7 +2300,9 @@
     <string name="MessageNotifier_reacted_s_to_your_gif">Отреагировал(-а) %1$s на вашу GIF-анимацию.</string>
     <string name="MessageNotifier_reacted_s_to_your_file">Отреагировал(-а) %1$s на ваш файл.</string>
     <string name="MessageNotifier_reacted_s_to_your_audio">Отреагировал(-а) %1$s на ваше аудио.</string>
-    <string name="MessageNotifier_reacted_s_to_your_view_once_media">Отреагировал(-а) %1$s на ваше одноразовое медиа.</string>
+    <string name="MessageNotifier_reacted_s_to_your_view_once_media">Отреагировал(-а) %1$s на ваш одноразовый медиафайл.</string>
+    <!-- Body of notification shown to user when someone they sent a payment to reacts to it. Placeholder is the emoji used in the reaction. -->
+    <string name="MessageNotifier_reacted_s_to_your_payment">Отреагировал(-а) %1$s на ваш платёж.</string>
     <string name="MessageNotifier_reacted_s_to_your_sticker">Отреагировал(-а) %1$s на ваш стикер.</string>
     <string name="MessageNotifier_this_message_was_deleted">Это сообщение было удалено.</string>
 
@@ -2197,6 +2340,8 @@
 
     <!-- SearchToolbar -->
     <string name="SearchToolbar_search">Поиск</string>
+    <!-- Hint when searching filtered chat content -->
+    <string name="SearchToolbar_search_unread_chats">Поиск непрочитанных чатов</string>
     <string name="SearchToolbar_search_for_conversations_contacts_and_messages">Поиск по разговорам, контактам и сообщениям</string>
 
     <!-- Material3 Search Toolbar -->
@@ -2229,6 +2374,9 @@
     <!-- UnauthorizedReminder -->
     <string name="UnauthorizedReminder_device_no_longer_registered">Устройство больше не зарегистрировано</string>
     <string name="UnauthorizedReminder_this_is_likely_because_you_registered_your_phone_number_with_Signal_on_a_different_device">Это может быть вызвано тем, что вы зарегистрировали свой номер телефона в Signal на другом устройстве. Нажмите для повторной регистрации.</string>
+
+    <!-- Push notification when the app is forcibly logged out by the server. -->
+    <string name="LoggedOutNotification_you_have_been_logged_out">Ваш сеанс работы с Signal на этом устройстве был завершён.</string>
 
     <!-- EnclaveFailureReminder -->
     <!-- Banner message to update app to use payments -->
@@ -2273,6 +2421,12 @@
     <!-- contact_selection_activity -->
     <string name="contact_selection_activity__invite_to_signal">Пригласить в Signal</string>
     <string name="contact_selection_activity__new_group">Новая группа</string>
+    <!-- Row item title for refreshing contacts -->
+    <string name="contact_selection_activity__refresh_contacts">Обновить контакты</string>
+    <!-- Row item description for refreshing contacts -->
+    <string name="contact_selection_activity__missing_someone">Не можете кого-то найти? Попробуйте обновить</string>
+    <!-- Row header title for more section -->
+    <string name="contact_selection_activity__more">Больше</string>
 
     <!-- contact_filter_toolbar -->
     <string name="contact_filter_toolbar__clear_entered_text_description">Стереть введённый текст</string>
@@ -2326,6 +2480,8 @@
     <string name="conversation_activity__type_message_push">Сообщение Signal</string>
     <string name="conversation_activity__type_message_sms_insecure">Незащищённое SMS</string>
     <string name="conversation_activity__type_message_mms_insecure">Незащищённое MMS</string>
+    <!-- Option in send button context menu to schedule the message instead of sending it directly -->
+    <string name="conversation_activity__option_schedule_message">Запланировать сообщение</string>
     <string name="conversation_activity__from_sim_name">Через %1$s</string>
     <string name="conversation_activity__sim_n">SIM %1$d</string>
     <string name="conversation_activity__send">Отправить</string>
@@ -2398,7 +2554,7 @@
     <!-- Label indicating that the story being replied to no longer exists -->
     <string name="QuoteView_no_longer_available">Больше не доступна</string>
     <!-- Label for quoted gift -->
-    <string name="QuoteView__gift">Подарок</string>
+    <string name="QuoteView__donation_for_a_friend">Пожертвование за друга</string>
 
     <!-- conversation_fragment -->
     <string name="conversation_fragment__scroll_to_the_bottom_content_description">Прокрутить вниз</string>
@@ -2868,7 +3024,7 @@
     <string name="preferences_storage__this_will_permanently_trim_all_conversations_to_the_d_most_recent_messages">Все разговоры будут безвозвратно обрезаны до %1$s самых новых сообщений.</string>
     <string name="preferences_storage__this_will_delete_all_message_history_and_media_from_your_device">Все сообщения и медиафайлы будут безвозвратно удалены с вашего устройства.</string>
     <string name="preferences_storage__are_you_sure_you_want_to_delete_all_message_history">Вы действительно хотите удалить всю историю сообщений?</string>
-    <string name="preferences_storage__all_message_history_will_be_permanently_removed_this_action_cannot_be_undone">Вся история сообщений будет безвозвратно удалена. Это действие невозможно отменено.</string>
+    <string name="preferences_storage__all_message_history_will_be_permanently_removed_this_action_cannot_be_undone">Вся история сообщений будет безвозвратно удалена. Это действие невозможно отменить.</string>
     <string name="preferences_storage__delete_all_now">Удалить всё сейчас</string>
     <string name="preferences_storage__forever">Бессрочно</string>
     <string name="preferences_storage__one_year">1 год</string>
@@ -3054,7 +3210,7 @@
     <string name="PaymentsDetailsFragment__sent_payment">Отправленный платёж</string>
     <string name="PaymentsDetailsFragment__received_payment">Полученный платёж</string>
     <string name="PaymentsDeatilsFragment__payment_completed_s">Платёж завершён %1$s</string>
-    <string name="PaymentsDetailsFragment__block_number">Номер блока</string>
+    <string name="PaymentsDetailsFragment__block_number">Заблокировать номер</string>
 
     <!-- PaymentsTransferFragment -->
     <string name="PaymentsTransferFragment__transfer">Перевести</string>
@@ -3098,6 +3254,8 @@
 
     <!-- EditNoteFragment -->
     <string name="EditNoteFragment_note">Заметка</string>
+    <!-- Content descriptor explaining the use of the save note FAB for Android accessibility settings-->
+    <string name="EditNoteFragment__content_description_save_note">Save note</string>
 
     <!-- ConfirmPaymentFragment -->
     <string name="ConfirmPayment__confirm_payment">Подтвердить платёж</string>
@@ -3138,6 +3296,8 @@
     <!-- **************************************** -->
 
     <!-- contact_selection_list -->
+    <!-- Displayed in a row on the new call screen when searching by phone number. -->
+    <string name="contact_selection_list__new_call">Новый звонок…</string>
     <string name="contact_selection_list__unknown_contact">Новое сообщение для…</string>
     <string name="contact_selection_list__unknown_contact_block">Заблокировать пользователя</string>
     <string name="contact_selection_list__unknown_contact_add_to_group">Добавить в группу</string>
@@ -3232,6 +3392,18 @@
     <!-- conversation_callable_insecure -->
     <string name="conversation_add_to_contacts__menu_add_to_contacts">Добавить в контакты</string>
 
+    <!-- conversation scheduled messages bar -->
+
+    <!-- Label for button in a banner to show all messages currently scheduled -->
+    <string name="conversation_scheduled_messages_bar__see_all">Просмотреть все</string>
+    <!-- Body text for banner to show all scheduled messages for the chat that tells the user how many scheduled messages there are -->
+    <plurals name="conversation_scheduled_messages_bar__number_of_messages">
+        <item quantity="one">%1$d сообщение запланировано</item>
+        <item quantity="few">%1$d сообщения запланировано</item>
+        <item quantity="many">%1$d сообщений запланировано</item>
+        <item quantity="other">%1$d сообщения запланировано</item>
+    </plurals>
+
     <!-- conversation_group_options -->
     <string name="convesation_group_options__recipients_list">Список получателей</string>
     <string name="conversation_group_options__delivery">Доставка</string>
@@ -3246,6 +3418,8 @@
     <string name="text_secure_normal__invite_friends">Пригласить друзей</string>
     <!-- Overflow menu entry to filter unread chats -->
     <string name="text_secure_normal__filter_unread_chats">Фильтровать непрочитанные чаты</string>
+    <!-- Overflow menu entry to disable unread chats filter -->
+    <string name="text_secure_normal__clear_unread_filter">Очистить фильтр непрочитанного</string>
 
     <!-- verify_display_fragment -->
     <string name="verify_display_fragment_context_menu__copy_to_clipboard">Копировать в буфер обмена</string>
@@ -3328,11 +3502,13 @@
     <string name="CreateKbsPinFragment__create_a_new_pin">Создать новый PIN-код</string>
     <string name="CreateKbsPinFragment__you_can_choose_a_new_pin_as_long_as_this_device_is_registered">Вы можете изменить свой PIN-код, пока это устройство зарегистрировано.</string>
     <string name="CreateKbsPinFragment__create_your_pin">Создать PIN-код</string>
-    <string name="CreateKbsPinFragment__pins_keep_information_stored_with_signal_encrypted">PIN-коды шифруют информацию, хранящуюся в сервисе Signal, чтобы только вы могли иметь в ней к ней доступ. Если вы переустановите Signal, ваши профиль, настройки и контакты будут восстановлены. Чтобы открыть приложение, PIN-код не понадобится.</string>
+    <string name="CreateKbsPinFragment__pins_can_help_you_restore_your_account">PIN-коды могут помочь вам восстановить вашу учётную запись и сохранить вашу информацию в зашифрованном виде в Signal. </string>
     <string name="CreateKbsPinFragment__choose_a_stronger_pin">Придумайте более надёжный PIN-код</string>
 
     <!-- ConfirmKbsPinFragment -->
     <string name="ConfirmKbsPinFragment__pins_dont_match">PIN-коды не совпадают. Попробуйте ещё раз.</string>
+    <!-- Prompt for the user to repeat entering the PIN in order to help them remember it correctly.   -->
+    <string name="ConfirmKbsPinFragment__re_enter_the_pin_you_just_created">Повторно введите PIN-код, который вы только что создали.</string>
     <string name="ConfirmKbsPinFragment__confirm_your_pin">Подтвердите свой PIN-код.</string>
     <string name="ConfirmKbsPinFragment__pin_creation_failed">Не удалось создать PIN-код</string>
     <string name="ConfirmKbsPinFragment__your_pin_was_not_saved">Ваш PIN-код не был сохранён. Мы попросим вас создать PIN-код позднее.</string>
@@ -3370,6 +3546,8 @@
     <!-- KbsLockFragment -->
     <string name="RegistrationLockFragment__enter_your_pin">Введите свой PIN-код</string>
     <string name="RegistrationLockFragment__enter_the_pin_you_created">Введите PIN-код, который вы создали для своей учётной записи. Это не то же самое. что проверочный код из SMS.</string>
+    <!-- Info text shown above a pin entry text box describing what pin they should be entering. -->
+    <string name="RegistrationLockFragment__enter_the_pin_you_created_for_your_account">Введите Пин-код, созданный для вашей учётной записи.</string>
     <string name="RegistrationLockFragment__enter_alphanumeric_pin">Ввести буквенно-цифровой PIN-код</string>
     <string name="RegistrationLockFragment__enter_numeric_pin">Ввести цифровой PIN-код</string>
     <string name="RegistrationLockFragment__incorrect_pin_try_again">Неверный PIN-код. Попробуйте ещё раз.</string>
@@ -3482,8 +3660,11 @@
     <!-- Error message shown if a very large attachment is encountered during the backup creation and causes the backup to fail -->
     <string name="LocalBackupJobApi29_your_backup_contains_a_very_large_file">Ваша резервная копия содержит очень большой файл, резервное копирование которого невозможно. Пожалуйста, удалите его и создайте новую резервную копию.</string>
     <string name="LocalBackupJobApi29_tap_to_manage_backups">Нажмите, чтобы управлять резервным копированием.</string>
-    <string name="RegistrationActivity_wrong_number">Неправильный номер</string>
-    <string name="RegistrationActivity_call_me_instead_available_in">Позвоните мне вместо SMS \n (доступно через %1$02d:%2$02d)</string>
+    <string name="RegistrationActivity_wrong_number">Неправильный номер?</string>
+    <!--    Countdown to when the user can request a new code via phone call during registration.-->
+    <string name="RegistrationActivity_call_me_instead_available_in">Позвоните мне (%1$02d:%2$02d)</string>
+    <!--    Countdown to when the user can request a new SMS code during registration.-->
+    <string name="RegistrationActivity_resend_sms_available_in">Отправить код ещё раз (%1$02d:%2$02d)</string>
     <string name="RegistrationActivity_contact_signal_support">Связаться с поддержкой Signal</string>
     <string name="RegistrationActivity_code_support_subject">Регистрация в Signal - код подтверждения для Android</string>
     <string name="RegistrationActivity_incorrect_code">Неверный код</string>
@@ -3491,6 +3672,18 @@
     <string name="BackupUtil_unknown">Неизвестно</string>
     <string name="preferences_app_protection__see_my_phone_number">Видеть мой номер телефона</string>
     <string name="preferences_app_protection__find_me_by_phone_number">Найти меня по номеру телефона</string>
+    <!-- Phone number heading displayed as a screen title -->
+    <string name="preferences_app_protection__phone_number">Номер телефона</string>
+    <!-- Subtext below option to launch into phone number privacy settings screen -->
+    <string name="preferences_app_protection__choose_who_can_see">Выберите, кто может видеть ваш номер телефона и связываться с вами в Signal с его помощью.</string>
+    <!-- Section title above two radio buttons for enabling and disabling phone number display -->
+    <string name="PhoneNumberPrivacySettingsFragment__who_can_see_my_number">Кто может видеть мой номер</string>
+    <!-- Subtext below radio buttons when who can see my number is set to nobody -->
+    <string name="PhoneNumberPrivacySettingsFragment__nobody_will_see">Никто не будет видеть ваш номер телефона в Signal</string>
+    <!-- Section title above two radio buttons for enabling and disabling whether users can find me by my phone number  -->
+    <string name="PhoneNumberPrivacySettingsFragment__who_can_find_me_by_number">Кто может найти меня по номеру?</string>
+    <!-- Subtext below radio buttons when who can see my number is set to everyone -->
+    <string name="PhoneNumberPrivacySettingsFragment__your_phone_number">Ваш номер телефона будет виден людям и группам, которым вы отправляете сообщения. Люди, у которых есть ваш номер в телефонных контактах, также увидят его в Signal.</string>
     <string name="PhoneNumberPrivacy_everyone">Все</string>
     <string name="PhoneNumberPrivacy_my_contacts">Мои контакты</string>
     <string name="PhoneNumberPrivacy_nobody">Никто</string>
@@ -3761,7 +3954,7 @@
     <string name="DeleteAccountFragment__delete_account">Удалить учётную запись</string>
     <string name="DeleteAccountFragment__delete_your_account_info_and_profile_photo">Удалению информации вашей учётной записи и фотографии профиля</string>
     <string name="DeleteAccountFragment__delete_all_your_messages">Удалению всех ваших сообщений</string>
-    <string name="DeleteAccountFragment__delete_s_in_your_payments_account">Удалению %1$s в вашей платёжной учётной записи</string>
+    <string name="DeleteAccountFragment__delete_s_in_your_payments_account">Удалить %1$s в вашей платёжной учётной записи</string>
     <string name="DeleteAccountFragment__no_country_code">Не указан код страны</string>
     <string name="DeleteAccountFragment__no_number">Не указан номер</string>
     <string name="DeleteAccountFragment__the_phone_number">Номер телефона, который вы ввели, не совпадает с номером телефона вашей учётной записи.</string>
@@ -3994,6 +4187,60 @@
     <string name="AccountSettingsFragment__youll_be_asked_less_frequently">Напоминания будут появляться реже со временем</string>
     <string name="AccountSettingsFragment__require_your_signal_pin">Требовать вводить ваш PIN-код Signal при повторной регистрации вашего номера телефона в Signal</string>
     <string name="AccountSettingsFragment__change_phone_number">Изменить номер телефона</string>
+    <!-- Account setting that allows user to request and export their signal account data -->
+    <string name="AccountSettingsFragment__request_account_data">Request account data</string>
+
+    <!-- ExportAccountDataFragment -->
+    <!-- Part of requesting account data flow, this is the section title for requesting that account data -->
+    <string name="ExportAccountDataFragment__your_account_data">Your account data</string>
+    <!-- Explanation of account data the user can request. %1$s is replaced with Learn more with a link -->
+    <string name="ExportAccountDataFragment__export_explanation">Download and export a report of your Signal account data. This report does not include any messages or media. %1$s</string>
+    <!-- Learn more link to more information about requesting account data -->
+    <string name="ExportAccountDataFragment__learn_more">Learn more</string>
+    <!-- Button action to download the report data -->
+    <string name="ExportAccountDataFragment__download_report">Download report</string>
+    <!-- Button action to export the report data to another app (e.g. email) -->
+    <string name="ExportAccountDataFragment__export_report">Export report</string>
+    <!-- Button action to delete the requested account data -->
+    <string name="ExportAccountDataFragment__delete_report">Delete report</string>
+
+    <!-- Radio option to export the data as a text file .txt -->
+    <string name="ExportAccountDataFragment__export_as_txt">Export as TXT</string>
+    <!-- Label for the text file option -->
+    <string name="ExportAccountDataFragment__export_as_txt_label">Easy-to-read text file</string>
+    <!-- Radio option to export the data as a json (java script object notation) file .json -->
+    <string name="ExportAccountDataFragment__export_as_json">Export as JSON</string>
+    <!-- Label for the json file option, the account data in a machine readable file format -->
+    <string name="ExportAccountDataFragment__export_as_json_label">Machine-readable file</string>
+
+    <!-- Action to cancel (in a dialog) -->
+    <string name="ExportAccountDataFragment__cancel_action">Cancel</string>
+
+    <!-- Acknowledgement for download failure -->
+    <string name="ExportAccountDataFragment__ok_action">OK</string>
+    <!-- Message shown when report download fails -->
+    <string name="ExportAccountDataFragment__report_download_failed">Your report could not be downloaded due to a network error. Check your connection and try again.</string>
+
+    <!-- Title for export confirmation dialog -->
+    <string name="ExportAccountDataFragment__export_report_confirmation">Export data?</string>
+    <!-- Message for export confirmation dialog -->
+    <string name="ExportAccountDataFragment__export_report_confirmation_message">Only share your Signal account data with people or apps you trust.</string>
+    <!-- Action to export in for export confirmation dialog -->
+    <string name="ExportAccountDataFragment__export_report_action">Export</string>
+
+    <!-- Action to delete report in confirmation dialog -->
+    <string name="ExportAccountDataFragment__delete_report_action">Delete</string>
+    <!-- Title for delete report confirmation dialog -->
+    <string name="ExportAccountDataFragment__delete_report_confirmation">Delete report?</string>
+    <!-- Message for delete report confirmation dialog -->
+    <string name="ExportAccountDataFragment__delete_report_confirmation_message">This will not delete any data from your account.</string>
+
+    <!-- Shown as a snackbar letting the user know the report was deleted -->
+    <string name="ExportAccountDataFragment__delete_report_snackbar">Report deleted</string>
+    <!-- Shown in a dialog with a spinner while the report is downloading -->
+    <string name="ExportAccountDataFragment__download_progress">Downloading report…</string>
+    <!-- Explanation that the downloaded report will be available for 30 days before it is deleted -->
+    <string name="ExportAccountDataFragment__report_deletion_disclaimer">Your report will be available for export for 30 days and will then be automatically deleted.</string>
 
     <!-- ChangeNumberFragment -->
     <string name="ChangeNumberFragment__use_this_to_change_your_current_phone_number_to_a_new_phone_number">Используйте эту функцию, чтобы изменить свой текущий номер телефона на новый. Это изменение нельзя отменить.\n\nПеред тем как продолжить, убедитесь, что ваш новый номер может принимать SMS или звонки.</string>
@@ -4244,9 +4491,9 @@
 
     <!-- ConversationSettingsFragment -->
     <!-- Dialog title displayed when non-admin tries to add a story to an audience group -->
-    <string name="ConversationSettingsFragment__cant_add_to_group_story">Не получилось добавить в историю в группе</string>
+    <string name="ConversationSettingsFragment__cant_add_to_group_story">Не удалось добавить к истории в группе</string>
     <!-- Dialog message displayed when non-admin tries to add a story to an audience group -->
-    <string name="ConversationSettingsFragment__only_admins_of_this_group_can_add_to_its_story">Только администраторы этой группы могут добавлять в неё историю</string>
+    <string name="ConversationSettingsFragment__only_admins_of_this_group_can_add_to_its_story">Только администраторы этой группы могут добавлять к её истории</string>
     <!-- Error toasted when no activity can handle the add contact intent -->
     <string name="ConversationSettingsFragment__contacts_app_not_found">Приложение для контактов не найдено</string>
     <string name="ConversationSettingsFragment__start_video_call">Начать видеозвонок</string>
@@ -4283,9 +4530,9 @@
     <string name="ConversationSettingsFragment__requests_and_invites">Запросы и приглашения</string>
     <string name="ConversationSettingsFragment__group_link">Ссылка на группу</string>
     <string name="ConversationSettingsFragment__add_as_a_contact">Добавить в контакты</string>
-    <string name="ConversationSettingsFragment__unmute">Включить звуки</string>
-    <string name="ConversationSettingsFragment__conversation_muted_until_s">Звуки разговора отключены до %1$s</string>
-    <string name="ConversationSettingsFragment__conversation_muted_forever">Звуки разговора отключены навсегда</string>
+    <string name="ConversationSettingsFragment__unmute">Включить звук</string>
+    <string name="ConversationSettingsFragment__conversation_muted_until_s">Звук разговора отключён до %1$s</string>
+    <string name="ConversationSettingsFragment__conversation_muted_forever">Звук разговора отключён навсегда</string>
     <string name="ConversationSettingsFragment__copied_phone_number_to_clipboard">Номер телефона был скопирован в буфер обмена.</string>
     <string name="ConversationSettingsFragment__phone_number">Номер телефона</string>
     <string name="ConversationSettingsFragment__get_badges">Получайте значки для своего профиля, поддерживая Signal. Нажмите на значок, чтобы узнать больше.</string>
@@ -4430,9 +4677,9 @@
 
     <!-- Media V2 -->
     <!-- Dialog message when sending a story via an add to group story button -->
-    <string name="MediaReviewFragment__add_to_the_group_story">Добавить в историю группы «%1$s»</string>
+    <string name="MediaReviewFragment__add_to_the_group_story">Добавить к истории группы «%1$s»</string>
     <!-- Positive dialog action when sending a story via an add to group story button -->
-    <string name="MediaReviewFragment__add_to_story">Добавить в историю</string>
+    <string name="MediaReviewFragment__add_to_story">Добавить к истории</string>
     <string name="MediaReviewFragment__add_a_message">Добавьте сообщение</string>
     <string name="MediaReviewFragment__add_a_reply">Добавьте ответ</string>
     <string name="MediaReviewFragment__send_to">Отправить</string>
@@ -4473,7 +4720,8 @@
     <string name="SelectFeaturedBadgeFragment__you_must_select_a_badge">Вы должны выбрать значок</string>
     <string name="SelectFeaturedBadgeFragment__failed_to_update_profile">Не удалось обновить профиль</string>
 
-    <string name="ViewBadgeBottomSheetDialogFragment__become_a_sustainer">Стать Поддерживающим</string>
+    <!-- Displayed on primary button in the bottom sheet as a call-to-action to launch into the donation flow -->
+    <string name="ViewBadgeBottomSheetDialogFragment__donate_now">Пожертвовать сейчас</string>
     <!-- Title of a page in the bottom sheet. Placeholder is a user\'s short-name -->
     <string name="ViewBadgeBottomSheetDialogFragment__s_supports_signal">%1$s поддерживает Signal</string>
     <!-- Description of a page in the bottom sheet of a monthly badge. Placeholder is a user\'s short-name -->
@@ -4537,12 +4785,12 @@
     <!-- Preference heading for other ways to donate -->
     <string name="ManageDonationsFragment__other_ways_to_give">Другие способы пожертвовать</string>
     <!-- Preference label to launch badge gifting -->
-    <string name="ManageDonationsFragment__gift_a_badge">Подарить значок</string>
+    <string name="ManageDonationsFragment__donate_for_a_friend">Пожертвовать за друга</string>
 
     <string name="Boost__enter_custom_amount">Ввести сумму</string>
     <string name="Boost__one_time_contribution">Одноразовая поддержка</string>
     <!-- Error label when the amount is smaller than what we can accept -->
-    <string name="Boost__the_minimum_amount_you_can_donate_is_s">The minimum amount you can donate is %1$s</string>
+    <string name="Boost__the_minimum_amount_you_can_donate_is_s">Минимальная сумма пожертвования составляет %1$s</string>
 
     <string name="MySupportPreference__s_per_month">%1$s/месяц</string>
     <string name="MySupportPreference__renews_s">Продлится %1$s</string>
@@ -4593,10 +4841,10 @@
     <string name="DonationsErrors__failed_to_validate_badge">Не удалось проверить значок</string>
     <!-- Displayed when badge credential couldn\'t be verified -->
     <string name="DonationsErrors__could_not_validate">Не удалось проверить ответ сервера. Пожалуйста, свяжитесь со службой поддержки.</string>
-    <!-- Displayed as title when some generic error happens during gift badge sending -->
-    <string name="DonationsErrors__failed_to_send_gift_badge">Не удалось отправить значок в подарок</string>
-    <!-- Displayed as message when some generic error happens during gift badge sending -->
-    <string name="DonationsErrors__could_not_send_gift_badge">Не удалось отправить значок в подарок. Пожалуйста, свяжитесь со службой поддержки.</string>
+    <!-- Displayed as title when some generic error happens during sending donation on behalf of another user -->
+    <string name="DonationsErrors__donation_failed">Не удалось пожертвовать</string>
+    <!-- Displayed as message when some generic error happens during sending donation on behalf of another user -->
+    <string name="DonationsErrors__your_payment_was_processed_but">Ваш платёж был обработан, но Signal не смог отправить сообщение о пожертвовании. Пожалуйста, свяжитесь с поддержкой.</string>
     <string name="DonationsErrors__your_badge_could_not">Ваш значок не удалось добавить в вашу учётную запись, но, возможно, с вас была взята плата. Пожалуйста, свяжитесь с поддержкой.</string>
     <string name="DonationsErrors__your_payment_is_still">Ваш платёж всё ещё обрабатывается. Это может занять несколько минут в зависимости от вашего соединения.</string>
     <string name="DonationsErrors__failed_to_cancel_subscription">Не удалось отменить подписку</string>
@@ -4605,16 +4853,16 @@
     <string name="NetworkFailure__network_error_check_your_connection_and_try_again">Ошибка сети. Проверьте ваше подключение к интернету и попробуйте ещё раз.</string>
     <string name="NetworkFailure__retry">Повторить попытку</string>
     <!-- Displayed as a dialog title when the selected recipient for a gift doesn\'t support gifting -->
-    <string name="DonationsErrors__cant_send_gift">Невозможно отправить подарок</string>
+    <string name="DonationsErrors__cannot_send_donation">Не удалось отправить пожертвование</string>
     <!-- Displayed as a dialog message when the selected recipient for a gift doesn\'t support gifting -->
-    <string name="DonationsErrors__target_does_not_support_gifting">Этот получатель использует версию Signal, которая не поддерживает функцию получения значков в подарок. Он сможет получать подарки, когда обновит приложение до последней версии.</string>
-    <!-- Displayed as a dialog title when the user\'s profile could not be fetched, likely due to lack of internet -->
-    <string name="DonationsErrors__couldnt_send_gift">Не удалось отправить подарок</string>
+    <string name="DonationsErrors__this_user_cant_receive_donations_until">Этот пользователь не сможет получать пожертвования, пока не обновит Signal.</string>
     <!-- Displayed as a dialog message when the user\'s profile could not be fetched, likely due to lack of internet -->
-    <string name="DonationsErrors__please_check_your_network_connection">Ваш подарок не удалось отправить из-за ошибки сети. Проверьте ваше подключение к интернету и попробуйте ещё раз.</string>
+    <string name="DonationsErrors__your_donation_could_not_be_sent">Ваше пожертвование не удалось отправить из-за ошибки сети. Проверьте ваше подключение к интернету и попробуйте ещё раз.</string>
 
     <!-- Gift message view title -->
-    <string name="GiftMessageView__gift_badge">Значок в подарок</string>
+    <string name="GiftMessageView__donation_on_behalf_of_s">Пожертвование от имени %1$s</string>
+    <!-- Gift message view title for incoming donations -->
+    <string name="GiftMessageView__s_donated_to_signal_on">%1$s пожертвовал(-а) Signal от вашего имени</string>
     <!-- Gift badge redeem action label -->
     <string name="GiftMessageView__redeem">Принять</string>
     <!-- Gift badge view action label -->
@@ -4825,7 +5073,7 @@
     <!-- Donation receipts one-time tab label -->
     <string name="DonationReceiptListFragment__one_time">Одноразовые</string>
     <!-- Donation receipts gift tab label -->
-    <string name="DonationReceiptListFragment__gift">Подарок</string>
+    <string name="DonationReceiptListFragment__donation_for_a_friend">Пожертвование за друга</string>
     <!-- Donation receipts boost row label -->
     <!-- Donation receipts details title -->
     <!-- Donation receipts donation type heading -->
@@ -4851,6 +5099,8 @@
 
     <!-- Label for Chats tab in home app screen -->
     <string name="ConversationListTabs__chats">Чаты</string>
+    <!-- Label for Calls tab in home app screen -->
+    <string name="ConversationListTabs__calls">Звонки</string>
     <!-- Label for Stories tab in home app screen -->
     <string name="ConversationListTabs__stories">Истории</string>
     <!-- String for counts above 99 in conversation list tabs -->
@@ -4972,6 +5222,8 @@
     <string name="StoryReplyComposer__react_to_this_story">Отреагировать на историю</string>
     <!-- Displayed when the user is replying privately to someone who replied to one of their stories -->
     <string name="StoryReplyComposer__replying_privately_to_s">Приватный ответ для %1$s</string>
+    <!-- Displayed when the user is replying privately to someone who replied to one of their stories -->
+    <string name="StoryReplyComposer__reply_to_s">Ответить %1$s</string>
     <!-- Context menu item to privately reply to a story response -->
     <!-- Context menu item to copy a story response -->
     <string name="StoryGroupReplyItem__copy">Копировать</string>
@@ -5191,22 +5443,25 @@
         <item quantity="many">%1$s · действует %2$d дней</item>
         <item quantity="other">%1$s · действует %2$d дня</item>
     </plurals>
-    <!-- Tagline for gift row items -->
-    <string name="GiftRowItem__send_a_gift_badge">Отправить значок в подарок</string>
     <!-- Headline text on start fragment for gifting a badge -->
-    <string name="GiftFlowStartFragment__gift_a_badge">Подарите значок</string>
+    <string name="GiftFlowStartFragment__donate_for_a_friend">Пожертвовать за друга</string>
     <!-- Description text on start fragment for gifting a badge -->
-    <string name="GiftFlowStartFragment__gift_someone_a_badge">Подарите кому-нибудь значок, сделав пожертвование Signal от их имени. Получатель сможет показать этот значок на фотографии своего профиля.</string>
+    <plurals name="GiftFlowStartFragment__support_signal_by">
+        <item quantity="one">Поддержите Signal с помощью пожертвования за друга или члена семьи, которые пользуются Signal. Они получат значок, который смогут показывать в своем профиле в течение %1$d дня</item>
+        <item quantity="few">Поддержите Signal с помощью пожертвования за друга или члена семьи, которые пользуются Signal. Они получат значок, который смогут показывать в своем профиле в течение %1$d дней</item>
+        <item quantity="many">Поддержите Signal с помощью пожертвования за друга или члена семьи, которые пользуются Signal. Они получат значок, который смогут показывать в своем профиле в течение %1$d дней</item>
+        <item quantity="other">Поддержите Signal с помощью пожертвования за друга или члена семьи, которые пользуются Signal. Они получат значок, который смогут показывать в своем профиле в течение %1$d дня</item>
+    </plurals>
     <!-- Action button label for start fragment for gifting a badge -->
     <string name="GiftFlowStartFragment__next">Далее</string>
     <!-- Title text on choose recipient page for badge gifting -->
     <string name="GiftFlowRecipientSelectionFragment__choose_recipient">Выберите получателя</string>
     <!-- Title text on confirm gift page -->
-    <string name="GiftFlowConfirmationFragment__confirm_gift">Подтвердите подарок</string>
+    <string name="GiftFlowConfirmationFragment__confirm_donation">Подтвердить пожертвование</string>
     <!-- Heading text specifying who the gift will be sent to -->
     <string name="GiftFlowConfirmationFragment__send_to">Получатель:</string>
     <!-- Text explaining that gift will be sent to the chosen recipient -->
-    <string name="GiftFlowConfirmationFragment__your_gift_will_be_sent_in">Ваш подарок будет отправлен получателю в сообщении 1-на-1. Вы можете добавить сообщение от себя ниже.</string>
+    <string name="GiftFlowConfirmationFragment__the_recipient_will_be_notified">Получатель будет уведомлён о пожертвовании в индивидуальном сообщении. Добавьте своё сообщение ниже.</string>
     <!-- Text explaining that this gift is a one time donation -->
     <string name="GiftFlowConfirmationFragment__one_time_donation">Одноразовое пожертвование</string>
     <!-- Hint for add message input -->
@@ -5214,27 +5469,27 @@
     <!-- Displayed in the dialog while verifying the chosen recipient -->
     <string name="GiftFlowConfirmationFragment__verifying_recipient">Проверяем получателя…</string>
     <!-- Title for sheet shown when opening a redeemed gift -->
-    <string name="ViewReceivedGiftBottomSheet__s_sent_you_a_gift">%1$s отправил(-а) вам подарок</string>
+    <string name="ViewReceivedGiftBottomSheet__s_made_a_donation_for_you">%1$s сделал(-а) пожертвование за вас</string>
     <!-- Title for sheet shown when opening a sent gift -->
     <string name="ViewSentGiftBottomSheet__thanks_for_your_support">Спасибо за вашу поддержку!</string>
     <!-- Description for sheet shown when opening a redeemed gift -->
-    <string name="ViewReceivedGiftBottomSheet__youve_received_a_gift_badge">Вы получили значок в подарок от %1$s! Помогите Signal повысить осведомлённость, показав этот значок в своём профиле.</string>
+    <string name="ViewReceivedGiftBottomSheet__s_made_a_donation_to_signal">%1$s сделал(-а) пожертвование Signal от вашего имени! Продемонстрируйте свою поддержку Signal в профиле.</string>
     <!-- Description for sheet shown when opening a sent gift -->
-    <string name="ViewSentGiftBottomSheet__youve_gifted_a_badge">Вы подарили %1$s значок. Когда получатель примет его, он сможет выбрать, показать или скрыть свой значок.</string>
+    <string name="ViewSentGiftBottomSheet__youve_made_a_donation_to_signal">Вы сделали пожертвование в Signal от имени %1$s. Этот пользователь при желании сможет продемонстрировать свою поддержку в профиле.</string>
     <!-- Primary action for pending gift sheet to redeem badge now -->
     <string name="ViewReceivedGiftSheet__redeem">Принять</string>
     <!-- Primary action for pending gift sheet to redeem badge later -->
     <string name="ViewReceivedGiftSheet__not_now">Не сейчас</string>
     <!-- Dialog text while redeeming a gift -->
-    <string name="ViewReceivedGiftSheet__redeeming_gift">Принятие подарка…</string>
+    <string name="ViewReceivedGiftSheet__redeeming_badge">Принятие значка…</string>
     <!-- Snackbar text when user presses "not now" on redemption sheet -->
     <string name="ConversationFragment__you_can_redeem_your_badge_later">Вы можете принять свой значок позже.</string>
     <!-- Description text in gift thanks sheet -->
-    <string name="GiftThanksSheet__youve_gifted_a_badge_to_s">Вы подарили %1$s значок. Когда получатель примет его, он сможет выбрать, показать или скрыть свой значок.</string>
+    <string name="GiftThanksSheet__youve_made_a_donation">Вы сделали пожертвование в Signal от имени %1$s. Этот пользователь сможет продемонстрировать свою поддержку в профиле.</string>
     <!-- Expired gift sheet title -->
-    <string name="ExpiredGiftSheetConfiguration__your_gift_badge_has_expired">Ваш значок, полученный в подарок, истёк</string>
+    <string name="ExpiredGiftSheetConfiguration__your_badge_has_expired">Ваш значок истёк</string>
     <!-- Expired gift sheet top description text -->
-    <string name="ExpiredGiftSheetConfiguration__your_gift_badge_has_expired_and_is">Ваш значок, полученный в подарок, истёк и больше не виден другим людям в вашем профиле.</string>
+    <string name="ExpiredGiftSheetConfiguration__your_badge_has_expired_and_is">Ваш значок истёк и больше не виден другим людям в вашем профиле.</string>
     <!-- Expired gift sheet bottom description text -->
     <string name="ExpiredGiftSheetConfiguration__to_continue">Чтобы продолжить поддерживать технологию, сделанную для вас, пожалуйста, подумайте о том, чтобы стать ежемесячным Поддерживающим.</string>
     <!-- Expired gift sheet make a monthly donation button -->
@@ -5298,14 +5553,14 @@
     <string name="ContactSearchMediator__delete_the_custom">Удалить пользовательскую историю «%1$s»?</string>
     <!-- Dialog action item for deleting a custom story -->
     <string name="ContactSearchMediator__delete">Удалить</string>
-    <!-- Gift expiry days remaining -->
+    <!-- Donation for a friend expiry days remaining -->
     <plurals name="Gifts__d_days_remaining">
         <item quantity="one">Остался %1$d день</item>
         <item quantity="few">Осталось %1$d дня</item>
         <item quantity="many">Осталось %1$d дней</item>
         <item quantity="other">Осталось %1$d дня</item>
     </plurals>
-    <!-- Gift expiry hours remaining -->
+    <!-- Donation for a friend expiry hours remaining -->
     <plurals name="Gifts__d_hours_remaining">
         <item quantity="one">Остался %1$d час</item>
         <item quantity="few">Осталось %1$d часа</item>
@@ -5319,7 +5574,7 @@
         <item quantity="many">Осталось %1$d минут</item>
         <item quantity="other">Осталось %1$d минуты</item>
     </plurals>
-    <!-- Gift expiry expired -->
+    <!-- Donation for a friend expiry expired -->
     <string name="Gifts__expired">Истёк</string>
 
     <!-- Label indicating that a user can tap to advance to the next post in a story -->
@@ -5567,9 +5822,9 @@
     <!-- Phase 1 Small megaphone title indicating sms is going away -->
     <string name="SmsExportMegaphone__sms_support_going_away">Поддержка SMS прекращается</string>
     <!-- Phase 1 small megaphone description indicating sms is going away -->
-    <string name="SmsExportMegaphone__sms_support_will_be_removed_soon_to_focus_on_encrypted_messaging">Поддержка SMS будет скоро удалена в пользу обмена зашифрованными сообщениями.</string>
+    <string name="SmsExportMegaphone__dont_worry_encrypted_signal_messages_will_continue_to_work">Не волнуйтесь, зашифрованные сообщения Signal будут работать по-прежнему.</string>
     <!-- Phase 1 small megaphone button that takes the user to the sms export flow -->
-    <string name="SmsExportMegaphone__export_sms">Экспорт SMS</string>
+    <string name="SmsExportMegaphone__continue">Продолжить</string>
     <!-- Title for screen shown after sms export has completed -->
     <string name="ExportSmsCompleteFragment__export_complete">Экспорт завершён</string>
     <!-- Button to continue to next screen -->
@@ -5630,8 +5885,8 @@
     </plurals>
     <!-- Button label for paying with a credit card -->
     <string name="GatewaySelectorBottomSheet__credit_or_debit_card">Кредитная или дебетовая карта</string>
-    <!-- Sheet summary when giving a gift -->
-    <string name="GatewaySelectorBottomSheet__send_a_gift_badge">Отправить значок в подарок</string>
+    <!-- Sheet summary when giving donating for a friend -->
+    <string name="GatewaySelectorBottomSheet__donate_for_a_friend">Пожертвовать за друга</string>
 
     <!-- StripePaymentInProgressFragment -->
     <string name="StripePaymentInProgressFragment__cancelling">Отменяем…</string>
@@ -5671,7 +5926,7 @@
     <string name="YourInformationIsPrivateBottomSheet__your_information_is_private">Ваша информация конфиденциальна</string>
     <string name="YourInformationIsPrivateBottomSheet__signal_does_not_collect">Signal не собирает и не хранит вашу личную информацию, когда вы делаете пожертвование.</string>
     <string name="YourInformationIsPrivateBottomSheet__we_use_stripe">Для получения ваших пожертвований мы используем компанию Stripe в качестве оператора платежей. Мы не имеем доступа ни к какой информации, которую вы ей предоставляете, не сохраняем и не храним её.</string>
-    <string name="YourInformationIsPrivateBottomSheet__signal_does_not_and_cannot">Signal не связывает и не может связать ваше пожертвование с вашим аккаунтом Signal.</string>
+    <string name="YourInformationIsPrivateBottomSheet__signal_does_not_and_cannot">Signal не связывает и не может связать ваше пожертвование с вашей учётной записью Signal.</string>
     <string name="YourInformationIsPrivateBottomSheet__thank_you">Спасибо за вашу поддержку!</string>
 
     <!-- GroupStoryEducationSheet -->
@@ -5685,11 +5940,169 @@
     <string name="GroupStoryEducationSheet__all_group_chat_members">Все участники группового чата могут просматривать ответы на истории.</string>
     <!-- Button label to dismiss sheet -->
     <string name="GroupStoryEducationSheet__next">Далее</string>
-
-    <!-- EOF -->
+    <string name="Registration_country_code_entry_hint">+0</string>
 
     <!-- PaypalCompleteOrderBottomSheet -->
-    <string name="PaypalCompleteOrderBottomSheet__donate">Donate</string>
-    <string name="PaypalCompleteOrderBottomSheet__payment">Payment</string>
+    <string name="PaypalCompleteOrderBottomSheet__donate">Поддержать</string>
+    <string name="PaypalCompleteOrderBottomSheet__payment">Платёж</string>
 
+    <!-- ChatFilter -->
+    <!-- Displayed in a pill at the top of the chat list when it is filtered by unread messages -->
+    <string name="ChatFilter__filtered_by_unread">Отфильтровано по непрочитанным</string>
+    <!-- Displayed underneath the filter circle at the top of the chat list when the user pulls at a very low velocity -->
+    <string name="ChatFilter__pull_to_filter">Проведите пальцем вниз, чтобы отфильтровать</string>
+    <!-- Displayed in the "clear filter" item in the chat feed if the user opened the filter from the overflow menu -->
+    <string name="ChatFilter__tip_pull_down">Совет: Проведите пальцем вниз по списку чатов, чтобы отфильтровать</string>
+
+    <!-- Title for screen describing that sms support is going to be removed soon -->
+    <string name="SmsRemoval_title_going_away">Поддержка SMS прекращается</string>
+    <!-- Bullet point message shown on describing screen as first bullet why sms is being removed, placeholder with be date of removal (e.g., March 21st) -->
+    <string name="SmsRemoval_info_bullet_1_s">Приложение Signal перестанет поддерживать обмен SMS-сообщениями %1$s.</string>
+    <!-- Bullet point message shown on describing screen as second bullet why sms is being removed -->
+    <string name="SmsRemoval_info_bullet_2">SMS-сообщения отличаются от сообщений Signal. <b>Это не влияет на зашифрованные сообщения Signal, которые будут продолжать работать.</b></string>
+    <!-- Bullet point message shown on describing screen as third bullet why sms is being removed -->
+    <string name="SmsRemoval_info_bullet_3">Вы можете экспортировать свои SMS-сообщения и выбрать новое приложение для SMS.</string>
+    <!-- Bullet point message shown on describing screen as first bullet variant why sms is being removed when user is locked out of sms -->
+    <string name="SmsRemoval_info_bullet_1_phase_3">Signal прекратил поддержку отправки SMS-сообщений.</string>
+    <!-- Button label on sms removal info/megaphone to start the export SMS flow -->
+    <string name="SmsRemoval_export_sms">Экспорт SMS</string>
+
+    <!-- Set up your username megaphone -->
+    <!-- Displayed as a title on a megaphone which prompts user to set up a username -->
+    <string name="SetUpYourUsername__set_up_your_signal_username">Настройте своё имя пользователя Signal</string>
+    <!-- Displayed as a description on a megaphone which prompts user to set up a username -->
+    <string name="SetUpYourUsername__usernames_let_others">Имена пользователей позволяют другим пользователям отправлять вам сообщения без вашего номера телефона</string>
+    <!-- Displayed as an action on a megaphone which prompts user to set up a username -->
+    <string name="SetUpYourUsername__not_now">Не сейчас</string>
+    <!-- Displayed as an action on a megaphone which prompts user to set up a username -->
+    <string name="SetUpYourUsername__continue">Продолжить</string>
+
+    <!-- Text Formatting -->
+    <!-- Popup menu label for applying bold style -->
+    <string name="TextFormatting_bold">Жирный</string>
+    <!-- Popup menu label for applying italic style -->
+    <string name="TextFormatting_italic">Курсив</string>
+    <!-- Popup menu label for applying strikethrough style -->
+    <string name="TextFormatting_strikethrough">Зачёркивание</string>
+    <!-- Popup menu label for applying monospace font style -->
+    <string name="TextFormatting_monospace">Моноспейс</string>
+    <!-- Popup menu label for applying spoiler style -->
+    <string name="TextFormatting_spoiler">Spoiler</string>
+
+    <!-- UsernameEducationFragment -->
+    <!-- Continue button which takes the user to the add a username screen -->
+    <string name="UsernameEducationFragment__continue">Продолжить</string>
+    <!-- Displayed as a title on the username education screen -->
+    <string name="UsernameEducationFragment__set_up_your_signal_username">Настроить своё имя пользователя Signal</string>
+    <!-- Displayed as body text in the username education screen -->
+    <string name="UsernameEducationFragment__usernames_are_paired_with_a_set_of_digits">Usernames are paired with a set of digits and aren\'t shared on your profile</string>
+    <!-- Displayed as body text in the username education screen -->
+    <string name="UsernameEducationFragment__each_username_has_a_unique_qr_code">Each username has a unique QR code and link you can share with friends to start a chat with you</string>
+    <!-- Displayed as body text in the username education screen. The string references the names of settings, so they should match our translations for those settings. -->
+    <string name="UsernameEducationFragment__turn_off_phone_number_discovery">Turn off phone number discovery under Settings &gt; Privacy &gt; Phone number &gt; Who can find my number, to use your username as the primary way others can contact you</string>
+
+    <!-- Username edit dialog -->
+    <!-- Option to open username editor displayed as a list item in a dialog -->
+    <string name="UsernameEditDialog__edit_username">Редактировать имя пользователя</string>
+    <!-- Option to delete username displayed as a list item in a dialog -->
+    <string name="UsernameEditDialog__delete_username">Удалить имя пользователя</string>
+
+    <!-- Time duration picker -->
+    <!-- Shown in a time duration picker for selecting duration in hours and minutes, label shown after the user input value for hour, e.g., 12h -->
+    <string name="TimeDurationPickerDialog_single_letter_hour_abbreviation">ч</string>
+    <!-- Shown in a time duration picker for selecting duration in hours and minutes, label shown after the user input value for minute, e.g., 24m -->
+    <string name="TimeDurationPickerDialog_single_letter_minute_abbreviation">м</string>
+    <!-- Shown in a time duration picker for selecting duration in hours and minutes, label for button that will apply the setting -->
+    <string name="TimeDurationPickerDialog_positive_button">Установить</string>
+    <!-- Shown in a time duration picker for selecting duration in hours and minutes, helper text indicating minimum allowable duration -->
+    <string name="TimeDurationPickerDialog_minimum_duration_warning">Минимальное время перед включением блокировки экрана – 1 минута.</string>
+
+    <!-- Call Log -->
+    <!-- Displayed below the user\'s name in row items on the call log. First placeholder is the call status, second is when it occurred -->
+    <string name="CallLogAdapter__s_dot_s">%1$s · %2$s</string>
+    <!-- Displayed for incoming calls -->
+    <string name="CallLogAdapter__incoming">Входящие</string>
+    <!-- Displayed for outgoing calls -->
+    <string name="CallLogAdapter__outgoing">Исходящие</string>
+    <!-- Displayed for missed calls -->
+    <string name="CallLogAdapter__missed">Пропущенные</string>
+
+    <!-- Call Log context menu -->
+    <!-- Displayed as a context menu item to start a video call -->
+    <string name="CallContextMenu__video_call">Видеозвонок</string>
+    <!-- Displayed as a context menu item to join an ongoing group call -->
+    <string name="CallContextMenu__join_call">Присоединиться к звонку</string>
+    <!-- Displayed as a context menu item to return to active call -->
+    <string name="CallContextMenu__return_to_call">Вернуться к звонку</string>
+    <!-- Displayed as a context menu item to start an audio call -->
+    <string name="CallContextMenu__audio_call">Аудиозвонок</string>
+    <!-- Displayed as a context menu item to go to chat -->
+    <string name="CallContextMenu__go_to_chat">Перейти к чату</string>
+    <!-- Displayed as a context menu item to see call info -->
+    <string name="CallContextMenu__info">Информация</string>
+    <!-- Displayed as a context menu item to select multiple calls -->
+    <string name="CallContextMenu__select">Выбрать</string>
+    <!-- Displayed as a context menu item to delete this call -->
+    <string name="CallContextMenu__delete">Удалить</string>
+
+    <!-- Call Log Fragment -->
+    <!-- Action bar menu item to only display missed calls -->
+    <string name="CallLogFragment__filter_missed_calls">Отфильтровать пропущенные звонки</string>
+    <!-- Action bar menu item to clear missed call filter -->
+    <string name="CallLogFragment__clear_filter">Очистить фильтр</string>
+    <!-- Action bar menu item to open settings -->
+    <string name="CallLogFragment__settings">Настройки</string>
+    <!-- Action bar menu item to open notification profile settings -->
+    <string name="CallLogFragment__notification_profile">Профиль уведомлений</string>
+    <!-- Call log new call content description -->
+    <string name="CallLogFragment__start_a_new_call">Начать новый звонок</string>
+    <!-- Filter pull text when pulled -->
+    <string name="CallLogFragment__filtered_by_missed">Отфильтровано по пропущенным</string>
+    <!-- Bottom bar option to select all call entries -->
+    <string name="CallLogFragment__select_all">Выбрать все</string>
+    <!-- Bottom bar option to delete all selected call entries -->
+    <string name="CallLogFragment__delete">Удалить</string>
+    <!-- Title on multi-delete protection dialog (TODO - final terminology) -->
+  <!-- Removed by excludeNonTranslatables <plurals name="CallLogFragment__delete_d_calls" translatable="false">
+        <item quantity="one">Delete %1$d call?</item>
+        <item quantity="other">Delete %1$d calls?</item>
+    </plurals> -->
+    <!-- Positive action on multi-delete protection dialog -->
+    <string name="CallLogFragment__delete_for_me">Удалить для меня</string>
+    <!-- Snackbar label after deleting call logs -->
+    <plurals name="CallLogFragment__d_calls_deleted">
+        <item quantity="one">%1$d звонок удалён</item>
+        <item quantity="few">%1$d звонка удалено</item>
+        <item quantity="many">%1$d звонков удалено</item>
+        <item quantity="other">%1$d звонка удалено</item>
+    </plurals>
+    <!-- Undo action for deletion snackbar -->
+    <string name="CallLogFragment__undo">Отменить</string>
+    <!-- Shown during empty state -->
+    <string name="CallLogFragment__no_calls">Нет звонков.</string>
+    <!-- Shown during empty state -->
+    <string name="CallLogFragment__get_started_by_calling_a_friend">Начните со звонка другу.</string>
+
+    <!-- New call activity -->
+    <!-- Activity title in title bar -->
+    <string name="NewCallActivity__new_call">Новый звонок</string>
+
+    <!-- Call state update popups -->
+    <!-- Displayed when the user enables group call ringing -->
+    <string name="CallStateUpdatePopupWindow__ringing_on">Звонки включены</string>
+    <!-- Displayed when the user disables group call ringing -->
+    <string name="CallStateUpdatePopupWindow__ringing_off">Звонки отключены</string>
+    <!-- Displayed when the user cannot enable group call ringing -->
+    <string name="CallStateUpdatePopupWindow__group_is_too_large">Невозможно звонить участникам: группа слишком большая</string>
+    <!-- Displayed when the user turns on their mic -->
+    <string name="CallStateUpdatePopupWindow__mic_on">Микрофон включён</string>
+    <!-- Displayed when the user turns off their mic -->
+    <string name="CallStateUpdatePopupWindow__mic_off">Микрофон выключен</string>
+
+    <!-- Accessibility label describing the capture button on the camera screen -->
+    <string name="CameraControls_capture_button_accessibility_label">Capture Button</string>
+    <!-- Accessibility label describing the continue button on the camera screen -->
+    <string name="CameraControls_continue_button_accessibility_label">Continue Button</string>
+
+    <!-- EOF -->
 </resources>
