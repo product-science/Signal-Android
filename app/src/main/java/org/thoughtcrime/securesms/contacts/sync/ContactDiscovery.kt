@@ -58,7 +58,7 @@ object ContactDiscovery {
 
     if (!SignalStore.registrationValues().isRegistrationComplete) {
       Log.w(TAG, "Registration is not yet complete. Skipping, but running a routine to possibly mark it complete.")
-      RegistrationUtil.maybeMarkRegistrationComplete(context)
+      RegistrationUtil.maybeMarkRegistrationComplete()
       return
     }
 
@@ -193,7 +193,7 @@ object ContactDiscovery {
     Recipient.resolvedList(newUserIds)
       .filter { !it.isSelf && it.hasAUserSetDisplayName(context) && !hasSession(it.id) }
       .map { IncomingJoinedMessage(it.id) }
-      .map { SignalDatabase.sms.insertMessageInbox(it) }
+      .map { SignalDatabase.messages.insertMessageInbox(it) }
       .filter { it.isPresent }
       .map { it.get() }
       .forEach { result ->

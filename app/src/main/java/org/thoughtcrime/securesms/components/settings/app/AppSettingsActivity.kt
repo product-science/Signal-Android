@@ -64,6 +64,7 @@ class AppSettingsActivity : DSLSettingsActivity(), DonationPaymentComponent {
           EditNotificationProfileScheduleFragmentArgs.fromBundle(intent.getBundleExtra(START_ARGUMENTS)!!).profileId
         )
         StartLocation.PRIVACY -> AppSettingsFragmentDirections.actionDirectToPrivacy()
+        StartLocation.LINKED_DEVICES -> AppSettingsFragmentDirections.actionDirectToDevices()
       }
     }
 
@@ -122,6 +123,7 @@ class AppSettingsActivity : DSLSettingsActivity(), DonationPaymentComponent {
     }
   }
 
+  @Suppress("DEPRECATION")
   override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
     super.onActivityResult(requestCode, resultCode, data)
     googlePayResultPublisher.onNext(DonationPaymentComponent.GooglePayResult(requestCode, resultCode, data))
@@ -183,6 +185,9 @@ class AppSettingsActivity : DSLSettingsActivity(), DonationPaymentComponent {
         .putExtra(START_ARGUMENTS, arguments)
     }
 
+    @JvmStatic
+    fun linkedDevices(context: Context): Intent = getIntentForStartLocation(context, StartLocation.LINKED_DEVICES)
+
     private fun getIntentForStartLocation(context: Context, startLocation: StartLocation): Intent {
       return Intent(context, AppSettingsActivity::class.java)
         .putExtra(ARG_NAV_GRAPH, R.navigation.app_settings)
@@ -203,7 +208,8 @@ class AppSettingsActivity : DSLSettingsActivity(), DonationPaymentComponent {
     NOTIFICATION_PROFILES(9),
     CREATE_NOTIFICATION_PROFILE(10),
     NOTIFICATION_PROFILE_DETAILS(11),
-    PRIVACY(12);
+    PRIVACY(12),
+    LINKED_DEVICES(13);
 
     companion object {
       fun fromCode(code: Int?): StartLocation {

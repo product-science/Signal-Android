@@ -9,6 +9,7 @@ import android.content.res.ColorStateList
 import android.graphics.drawable.Drawable
 import android.media.AudioManager
 import android.os.Bundle
+import android.text.SpannableString
 import android.text.method.ScrollingMovementMethod
 import android.view.GestureDetector
 import android.view.MotionEvent
@@ -17,7 +18,6 @@ import android.view.View
 import android.view.animation.Interpolator
 import android.widget.FrameLayout
 import android.widget.TextView
-import androidx.cardview.widget.CardView
 import androidx.constraintlayout.widget.ConstraintLayout
 import androidx.constraintlayout.widget.ConstraintSet
 import androidx.core.content.ContextCompat
@@ -29,12 +29,14 @@ import androidx.fragment.app.DialogFragment
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.viewModels
 import com.google.android.material.button.MaterialButton
+import com.google.android.material.card.MaterialCardView
 import com.google.android.material.progressindicator.CircularProgressIndicatorSpec
 import com.google.android.material.progressindicator.IndeterminateDrawable
 import io.reactivex.rxjava3.android.schedulers.AndroidSchedulers
 import io.reactivex.rxjava3.core.Observable
 import org.signal.core.util.DimensionUnit
 import org.signal.core.util.dp
+import org.signal.core.util.getParcelableCompat
 import org.signal.core.util.logging.Log
 import org.thoughtcrime.securesms.R
 import org.thoughtcrime.securesms.animation.AnimationCompleteListener
@@ -46,12 +48,14 @@ import org.thoughtcrime.securesms.contacts.avatars.FallbackPhoto20dp
 import org.thoughtcrime.securesms.contacts.avatars.GeneratedContactPhoto
 import org.thoughtcrime.securesms.contacts.paged.ContactSearchKey
 import org.thoughtcrime.securesms.conversation.ConversationIntents
+import org.thoughtcrime.securesms.conversation.MessageStyler
 import org.thoughtcrime.securesms.conversation.colors.AvatarColor
 import org.thoughtcrime.securesms.conversation.mutiselect.forward.MultiselectForwardBottomSheet
 import org.thoughtcrime.securesms.conversation.mutiselect.forward.MultiselectForwardFragment
 import org.thoughtcrime.securesms.conversation.mutiselect.forward.MultiselectForwardFragmentArgs
 import org.thoughtcrime.securesms.database.AttachmentTable
 import org.thoughtcrime.securesms.database.model.MediaMmsMessageRecord
+import org.thoughtcrime.securesms.database.model.databaseprotos.BodyRangeList
 import org.thoughtcrime.securesms.mediapreview.MediaPreviewFragment
 import org.thoughtcrime.securesms.mediapreview.VideoControlsDelegate
 import org.thoughtcrime.securesms.mms.GlideApp
@@ -150,7 +154,9 @@ class StoryViewerPageFragment :
 
   private var sendingProgressDrawable: IndeterminateDrawable<CircularProgressIndicatorSpec>? = null
 
-  private val storyViewerPageArgs: StoryViewerPageArgs by lazy(LazyThreadSafetyMode.NONE) { requireArguments().getParcelable(ARGS)!! }
+  private val storyViewerPageArgs: StoryViewerPageArgs by lazy(LazyThreadSafetyMode.NONE) {
+    requireArguments().getParcelableCompat(ARGS, StoryViewerPageArgs::class.java)!!
+  }
 
   @SuppressLint("ClickableViewAccessibility")
   override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
@@ -170,7 +176,7 @@ class StoryViewerPageFragment :
     val moreButton: View = view.findViewById(R.id.more)
     val distributionList: TextView = view.findViewById(R.id.distribution_list)
     val cardWrapper: TouchInterceptingFrameLayout = view.findViewById(R.id.story_content_card_touch_interceptor)
-    val card: CardView = view.findViewById(R.id.story_content_card)
+    val card: MaterialCardView = view.findViewById(R.id.story_content_card)
     val caption: TextView = view.findViewById(R.id.story_caption)
     val largeCaption: TextView = view.findViewById(R.id.story_large_caption)
     val largeCaptionOverlay: View = view.findViewById(R.id.story_large_caption_overlay)
@@ -225,7 +231,7 @@ class StoryViewerPageFragment :
     val singleTapHandler = SingleTapHandler(
       cardWrapper,
       viewModel::goToNextPost,
-      viewModel::goToPreviousPost,
+      viewModel::goToPreviousPost
     )
 
     val gestureDetector = GestureDetectorCompat(
@@ -242,7 +248,9 @@ class StoryViewerPageFragment :
     gestureDetector.setOnDoubleTapListener(null)
 
     val scaleListener = StoryScaleListener(
-      viewModel, sharedViewModel, card
+      viewModel,
+      sharedViewModel,
+      card
     )
 
     val scaleDetector = ScaleGestureDetector(
@@ -602,7 +610,7 @@ class StoryViewerPageFragment :
   private fun adjustConstraintsForScreenDimensions(
     viewsAndReplies: View,
     cardWrapper: View,
-    card: CardView
+    card: MaterialCardView
   ) {
     val constraintSet = ConstraintSet()
     constraintSet.clone(storyPageContainer)
@@ -803,8 +811,14 @@ class StoryViewerPageFragment :
 
   @SuppressLint("SetTextI18n")
   private fun presentCaption(caption: TextView, largeCaption: TextView, largeCaptionOverlay: View, storyPost: StoryPost) {
-    val displayBody: String = if (storyPost.content is StoryPost.Content.AttachmentContent) {
-      storyPost.content.attachment.caption ?: ""
+    val displayBody: CharSequence = if (storyPost.content is StoryPost.Content.AttachmentContent) {
+      val displayBodySpan = SpannableString(storyPost.content.attachment.caption ?: "")
+      val ranges: BodyRangeList? = storyPost.conversationMessage.messageRecord.messageRanges
+      if (ranges != null && displayBodySpan.isNotEmpty()) {
+        MessageStyler.style(ranges, displayBodySpan)
+      }
+
+      displayBodySpan
     } else {
       ""
     }
@@ -973,14 +987,14 @@ class StoryViewerPageFragment :
   }
 
   private fun presentPartialSendBottomBar() {
-    viewsAndReplies.setIconResource(R.drawable.ic_error_outline_24)
+    viewsAndReplies.setIconResource(R.drawable.symbol_error_circle_24)
     viewsAndReplies.iconTint = ColorStateList.valueOf(ContextCompat.getColor(requireContext(), R.color.signal_light_colorError))
     viewsAndReplies.iconSize = 20.dp
     viewsAndReplies.setText(R.string.StoryViewerPageFragment__partially_sent)
   }
 
   private fun presentSendFailureBottomBar() {
-    viewsAndReplies.setIconResource(R.drawable.ic_error_outline_24)
+    viewsAndReplies.setIconResource(R.drawable.symbol_error_circle_24)
     viewsAndReplies.iconTint = ColorStateList.valueOf(ContextCompat.getColor(requireContext(), R.color.signal_light_colorError))
     viewsAndReplies.iconSize = 20.dp
     viewsAndReplies.setText(R.string.StoryViewerPageFragment__send_failed)
@@ -993,12 +1007,12 @@ class StoryViewerPageFragment :
     if (Recipient.self() == post.sender) {
       if (isReceiptsEnabled) {
         if (post.replyCount == 0) {
-          viewsAndReplies.setIconResource(R.drawable.ic_chevron_end_bold_16)
+          viewsAndReplies.setIconResource(R.drawable.symbol_chevron_right_compact_bold_16)
           viewsAndReplies.iconSize = DimensionUnit.DP.toPixels(16f).toInt()
           viewsAndReplies.iconGravity = MaterialButton.ICON_GRAVITY_TEXT_END
           viewsAndReplies.text = views
         } else {
-          viewsAndReplies.setIconResource(R.drawable.ic_chevron_end_bold_16)
+          viewsAndReplies.setIconResource(R.drawable.symbol_chevron_right_compact_bold_16)
           viewsAndReplies.iconSize = DimensionUnit.DP.toPixels(16f).toInt()
           viewsAndReplies.iconGravity = MaterialButton.ICON_GRAVITY_TEXT_END
           viewsAndReplies.text = getString(R.string.StoryViewerFragment__s_s, views, replies)
@@ -1008,24 +1022,24 @@ class StoryViewerPageFragment :
           viewsAndReplies.icon = null
           viewsAndReplies.setText(R.string.StoryViewerPageFragment__views_off)
         } else {
-          viewsAndReplies.setIconResource(R.drawable.ic_chevron_end_bold_16)
+          viewsAndReplies.setIconResource(R.drawable.symbol_chevron_right_compact_bold_16)
           viewsAndReplies.iconSize = DimensionUnit.DP.toPixels(16f).toInt()
           viewsAndReplies.iconGravity = MaterialButton.ICON_GRAVITY_TEXT_END
           viewsAndReplies.text = replies
         }
       }
     } else if (post.replyCount > 0) {
-      viewsAndReplies.setIconResource(R.drawable.ic_chevron_end_bold_16)
+      viewsAndReplies.setIconResource(R.drawable.symbol_chevron_right_compact_bold_16)
       viewsAndReplies.iconSize = DimensionUnit.DP.toPixels(16f).toInt()
       viewsAndReplies.iconGravity = MaterialButton.ICON_GRAVITY_TEXT_END
       viewsAndReplies.text = replies
     } else if (post.group != null) {
-      viewsAndReplies.setIconResource(R.drawable.ic_reply_24_outline)
+      viewsAndReplies.setIconResource(R.drawable.symbol_reply_24)
       viewsAndReplies.iconSize = DimensionUnit.DP.toPixels(20f).toInt()
       viewsAndReplies.iconGravity = MaterialButton.ICON_GRAVITY_TEXT_START
       viewsAndReplies.setText(R.string.StoryViewerPageFragment__reply_to_group)
     } else {
-      viewsAndReplies.setIconResource(R.drawable.ic_reply_24_outline)
+      viewsAndReplies.setIconResource(R.drawable.symbol_reply_24)
       viewsAndReplies.iconSize = DimensionUnit.DP.toPixels(20f).toInt()
       viewsAndReplies.iconGravity = MaterialButton.ICON_GRAVITY_TEXT_START
       viewsAndReplies.setText(R.string.StoryViewerPageFragment__reply)
@@ -1053,7 +1067,7 @@ class StoryViewerPageFragment :
         viewModel.setIsDisplayingForwardDialog(true)
         MultiselectForwardFragmentArgs.create(
           requireContext(),
-          storyPost.conversationMessage.multiselectCollection.toSet(),
+          storyPost.conversationMessage.multiselectCollection.toSet()
         ) {
           MultiselectForwardFragment.showBottomSheet(childFragmentManager, it)
         }
@@ -1184,7 +1198,7 @@ class StoryViewerPageFragment :
       scaleFactor = 1f
       isPerformingEndAnimation = true
       card.animate().scaleX(1f).scaleY(1f).setListener(object : AnimationCompleteListener() {
-        override fun onAnimationEnd(animation: Animator?) {
+        override fun onAnimationEnd(animation: Animator) {
           isPerformingEndAnimation = false
           viewModel.setIsUserScaling(false)
           sharedViewModel.setIsChildScrolling(false)
@@ -1255,7 +1269,7 @@ class StoryViewerPageFragment :
       return true
     }
 
-    override fun onFling(e1: MotionEvent?, e2: MotionEvent?, velocityX: Float, velocityY: Float): Boolean {
+    override fun onFling(e1: MotionEvent, e2: MotionEvent, velocityX: Float, velocityY: Float): Boolean {
       val isSideSwipe = abs(velocityX) > abs(velocityY)
       if (!isSideSwipe) {
         return false
@@ -1279,7 +1293,7 @@ class StoryViewerPageFragment :
 
   private class FallbackPhotoProvider : Recipient.FallbackPhotoProvider() {
     override fun getPhotoForGroup(): FallbackContactPhoto {
-      return FallbackPhoto20dp(R.drawable.ic_group_outline_20)
+      return FallbackPhoto20dp(R.drawable.symbol_group_20)
     }
 
     override fun getPhotoForResolvingRecipient(): FallbackContactPhoto {
@@ -1291,11 +1305,11 @@ class StoryViewerPageFragment :
     }
 
     override fun getPhotoForRecipientWithName(name: String, targetSize: Int): FallbackContactPhoto {
-      return FixedSizeGeneratedContactPhoto(name, R.drawable.ic_profile_outline_20)
+      return FixedSizeGeneratedContactPhoto(name, R.drawable.symbol_person_20)
     }
 
     override fun getPhotoForRecipientWithoutName(): FallbackContactPhoto {
-      return FallbackPhoto20dp(R.drawable.ic_profile_outline_20)
+      return FallbackPhoto20dp(R.drawable.symbol_person_20)
     }
   }
 

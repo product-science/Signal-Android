@@ -11,6 +11,7 @@ import org.whispersystems.signalservice.api.messages.shared.SharedContact
 import org.whispersystems.signalservice.api.push.ServiceId
 import org.whispersystems.signalservice.api.util.OptionalUtil.asOptional
 import org.whispersystems.signalservice.api.util.OptionalUtil.emptyIfStringEmpty
+import org.whispersystems.signalservice.internal.push.SignalServiceProtos.BodyRange
 import java.util.LinkedList
 import java.util.Optional
 import org.whispersystems.signalservice.internal.push.SignalServiceProtos.DataMessage.Payment as PaymentProto
@@ -47,7 +48,8 @@ class SignalServiceDataMessage private constructor(
   val groupCallUpdate: Optional<GroupCallUpdate>,
   val payment: Optional<Payment>,
   val storyContext: Optional<StoryContext>,
-  val giftBadge: Optional<GiftBadge>
+  val giftBadge: Optional<GiftBadge>,
+  val bodyRanges: Optional<List<BodyRange>>
 ) {
   val isActivatePaymentsRequest: Boolean = payment.map { it.isActivationRequest }.orElse(false)
   val isPaymentsActivated: Boolean = payment.map { it.isActivation }.orElse(false)
@@ -92,6 +94,7 @@ class SignalServiceDataMessage private constructor(
     private var payment: Payment? = null
     private var storyContext: StoryContext? = null
     private var giftBadge: GiftBadge? = null
+    private var bodyRanges: MutableList<BodyRange> = LinkedList<BodyRange>()
 
     fun withTimestamp(timestamp: Long): Builder {
       this.timestamp = timestamp
@@ -210,6 +213,11 @@ class SignalServiceDataMessage private constructor(
       return this
     }
 
+    fun withBodyRanges(bodyRanges: List<BodyRange>?): Builder {
+      bodyRanges?.let { this.bodyRanges.addAll(bodyRanges) }
+      return this
+    }
+
     fun build(): SignalServiceDataMessage {
       if (timestamp == 0L) {
         timestamp = System.currentTimeMillis()
@@ -236,18 +244,20 @@ class SignalServiceDataMessage private constructor(
         groupCallUpdate = groupCallUpdate.asOptional(),
         payment = payment.asOptional(),
         storyContext = storyContext.asOptional(),
-        giftBadge = giftBadge.asOptional()
+        giftBadge = giftBadge.asOptional(),
+        bodyRanges = bodyRanges.asOptional()
       )
     }
   }
 
   data class Quote(
     val id: Long,
-    val author: ServiceId,
+    val author: ServiceId?,
     val text: String,
-    val attachments: List<QuotedAttachment>,
-    val mentions: List<Mention>,
-    val type: Type
+    val attachments: List<QuotedAttachment>?,
+    val mentions: List<Mention>?,
+    val type: Type,
+    val bodyRanges: List<BodyRange>?
   ) {
     enum class Type(val protoType: QuoteProto.Type) {
       NORMAL(QuoteProto.Type.NORMAL),
@@ -261,13 +271,13 @@ class SignalServiceDataMessage private constructor(
       }
     }
 
-    data class QuotedAttachment(val contentType: String, val fileName: String, val thumbnail: SignalServiceAttachment)
+    data class QuotedAttachment(val contentType: String, val fileName: String?, val thumbnail: SignalServiceAttachment?)
   }
-  class Sticker(val packId: ByteArray, val packKey: ByteArray, val stickerId: Int, val emoji: String, val attachment: SignalServiceAttachment)
+  class Sticker(val packId: ByteArray?, val packKey: ByteArray?, val stickerId: Int, val emoji: String?, val attachment: SignalServiceAttachment?)
   data class Reaction(val emoji: String, val isRemove: Boolean, val targetAuthor: ServiceId, val targetSentTimestamp: Long)
   data class RemoteDelete(val targetSentTimestamp: Long)
   data class Mention(val serviceId: ServiceId, val start: Int, val length: Int)
-  data class GroupCallUpdate(val eraId: String)
+  data class GroupCallUpdate(val eraId: String?)
   class PaymentNotification(val receipt: ByteArray, val note: String)
   data class PaymentActivation(val type: PaymentProto.Activation.Type)
   class Payment(paymentNotification: PaymentNotification?, paymentActivation: PaymentActivation?) {

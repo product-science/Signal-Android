@@ -15,6 +15,7 @@ import com.google.android.material.snackbar.Snackbar
 import io.reactivex.rxjava3.android.schedulers.AndroidSchedulers
 import io.reactivex.rxjava3.disposables.Disposable
 import io.reactivex.rxjava3.kotlin.subscribeBy
+import org.signal.core.util.getParcelableCompat
 import org.signal.core.util.logging.Log
 import org.signal.core.util.money.FiatMoney
 import org.signal.donations.GooglePayApi
@@ -64,7 +65,7 @@ class DonationCheckoutDelegate(
 
   init {
     fragment.viewLifecycleOwner.lifecycle.addObserver(this)
-    ErrorHandler().attach(fragment, errorSource, *additionalSources)
+    ErrorHandler().attach(fragment, callback, errorSource, *additionalSources)
   }
 
   override fun onCreate(owner: LifecycleOwner) {
@@ -73,22 +74,22 @@ class DonationCheckoutDelegate(
     registerGooglePayCallback()
 
     fragment.setFragmentResultListener(GatewaySelectorBottomSheet.REQUEST_KEY) { _, bundle ->
-      val response: GatewayResponse = bundle.getParcelable(GatewaySelectorBottomSheet.REQUEST_KEY)!!
+      val response: GatewayResponse = bundle.getParcelableCompat(GatewaySelectorBottomSheet.REQUEST_KEY, GatewayResponse::class.java)!!
       handleGatewaySelectionResponse(response)
     }
 
     fragment.setFragmentResultListener(StripePaymentInProgressFragment.REQUEST_KEY) { _, bundle ->
-      val result: DonationProcessorActionResult = bundle.getParcelable(StripePaymentInProgressFragment.REQUEST_KEY)!!
+      val result: DonationProcessorActionResult = bundle.getParcelableCompat(StripePaymentInProgressFragment.REQUEST_KEY, DonationProcessorActionResult::class.java)!!
       handleDonationProcessorActionResult(result)
     }
 
     fragment.setFragmentResultListener(CreditCardFragment.REQUEST_KEY) { _, bundle ->
-      val result: DonationProcessorActionResult = bundle.getParcelable(StripePaymentInProgressFragment.REQUEST_KEY)!!
+      val result: DonationProcessorActionResult = bundle.getParcelableCompat(StripePaymentInProgressFragment.REQUEST_KEY, DonationProcessorActionResult::class.java)!!
       handleDonationProcessorActionResult(result)
     }
 
     fragment.setFragmentResultListener(PayPalPaymentInProgressFragment.REQUEST_KEY) { _, bundle ->
-      val result: DonationProcessorActionResult = bundle.getParcelable(PayPalPaymentInProgressFragment.REQUEST_KEY)!!
+      val result: DonationProcessorActionResult = bundle.getParcelableCompat(PayPalPaymentInProgressFragment.REQUEST_KEY, DonationProcessorActionResult::class.java)!!
       handleDonationProcessorActionResult(result)
     }
   }
@@ -132,7 +133,7 @@ class DonationCheckoutDelegate(
         }
         .show()
     } else {
-      Log.w(TAG, "Stripe action failed: ${result.action}")
+      Log.w(TAG, "Processor action failed: ${result.action}")
     }
   }
 
@@ -203,9 +204,12 @@ class DonationCheckoutDelegate(
 
     private var fragment: Fragment? = null
     private var errorDialog: DialogInterface? = null
+    private var userCancelledFlowCallback: UserCancelledFlowCallback? = null
 
-    fun attach(fragment: Fragment, errorSource: DonationErrorSource, vararg additionalSources: DonationErrorSource) {
+    fun attach(fragment: Fragment, userCancelledFlowCallback: UserCancelledFlowCallback?, errorSource: DonationErrorSource, vararg additionalSources: DonationErrorSource) {
       this.fragment = fragment
+      this.userCancelledFlowCallback = userCancelledFlowCallback
+
       val disposables = LifecycleDisposable()
       fragment.viewLifecycleOwner.lifecycle.addObserver(this)
 
@@ -219,6 +223,7 @@ class DonationCheckoutDelegate(
     override fun onDestroy(owner: LifecycleOwner) {
       errorDialog?.dismiss()
       fragment = null
+      userCancelledFlowCallback = null
     }
 
     private fun registerErrorSource(errorSource: DonationErrorSource): Disposable {
@@ -237,17 +242,18 @@ class DonationCheckoutDelegate(
 
       if (throwable is DonationError.UserCancelledPaymentError) {
         Log.d(TAG, "User cancelled out of payment flow.", true)
-        fragment?.findNavController()?.popBackStack(R.id.donateToSignalFragment, false)
+
         return
       }
 
       Log.d(TAG, "Displaying donation error dialog.", true)
       errorDialog = DonationErrorDialogs.show(
-        fragment!!.requireContext(), throwable,
+        fragment!!.requireContext(),
+        throwable,
         object : DonationErrorDialogs.DialogCallback() {
           var tryCCAgain = false
 
-          override fun onTryCreditCardAgain(context: Context): DonationErrorParams.ErrorAction<Unit>? {
+          override fun onTryCreditCardAgain(context: Context): DonationErrorParams.ErrorAction<Unit> {
             return DonationErrorParams.ErrorAction(
               label = R.string.DeclineCode__try,
               action = {
@@ -267,7 +273,11 @@ class DonationCheckoutDelegate(
     }
   }
 
-  interface Callback {
+  interface UserCancelledFlowCallback {
+    fun onUserCancelledPaymentFlow()
+  }
+
+  interface Callback : UserCancelledFlowCallback {
     fun navigateToStripePaymentInProgress(gatewayRequest: GatewayRequest)
     fun navigateToPayPalPaymentInProgress(gatewayRequest: GatewayRequest)
     fun navigateToCreditCardForm(gatewayRequest: GatewayRequest)

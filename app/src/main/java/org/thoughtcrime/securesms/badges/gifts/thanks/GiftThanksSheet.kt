@@ -4,6 +4,7 @@ import android.os.Bundle
 import androidx.fragment.app.FragmentManager
 import io.reactivex.rxjava3.android.schedulers.AndroidSchedulers
 import org.signal.core.util.DimensionUnit
+import org.signal.core.util.getParcelableCompat
 import org.thoughtcrime.securesms.R
 import org.thoughtcrime.securesms.badges.models.Badge
 import org.thoughtcrime.securesms.badges.models.BadgePreview
@@ -41,10 +42,10 @@ class GiftThanksSheet : DSLSettingsBottomSheetFragment() {
   private val lifecycleDisposable = LifecycleDisposable()
 
   private val recipientId: RecipientId
-    get() = requireArguments().getParcelable(ARGS_RECIPIENT_ID)!!
+    get() = requireArguments().getParcelableCompat(ARGS_RECIPIENT_ID, RecipientId::class.java)!!
 
   private val badge: Badge
-    get() = requireArguments().getParcelable(ARGS_BADGE)!!
+    get() = requireArguments().getParcelableCompat(ARGS_BADGE, Badge::class.java)!!
 
   override fun bindAdapter(adapter: DSLSettingsAdapter) {
     BadgePreview.register(adapter)
@@ -63,7 +64,7 @@ class GiftThanksSheet : DSLSettingsBottomSheetFragment() {
 
       noPadTextPref(
         title = DSLSettingsText.from(
-          getString(R.string.GiftThanksSheet__youve_gifted_a_badge_to_s, recipient.getDisplayName(requireContext())),
+          getString(R.string.GiftThanksSheet__youve_made_a_donation, recipient.getDisplayName(requireContext())),
           DSLSettingsText.CenterModifier
         )
       )

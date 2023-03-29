@@ -6,12 +6,17 @@ import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.Transformations
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
+import io.reactivex.rxjava3.android.schedulers.AndroidSchedulers
+import io.reactivex.rxjava3.core.Observable
 import io.reactivex.rxjava3.disposables.CompositeDisposable
 import io.reactivex.rxjava3.kotlin.plusAssign
+import io.reactivex.rxjava3.subjects.PublishSubject
+import io.reactivex.rxjava3.subjects.Subject
 import org.signal.core.util.CursorUtil
 import org.signal.core.util.ThreadUtil
 import org.signal.core.util.concurrent.SignalExecutors
 import org.thoughtcrime.securesms.components.settings.conversation.preferences.ButtonStripPreference
+import org.thoughtcrime.securesms.components.settings.conversation.preferences.CallPreference
 import org.thoughtcrime.securesms.components.settings.conversation.preferences.LegacyGroupPreference
 import org.thoughtcrime.securesms.database.AttachmentTable
 import org.thoughtcrime.securesms.database.RecipientTable
@@ -24,14 +29,14 @@ import org.thoughtcrime.securesms.recipients.Recipient
 import org.thoughtcrime.securesms.recipients.RecipientId
 import org.thoughtcrime.securesms.recipients.RecipientUtil
 import org.thoughtcrime.securesms.util.FeatureFlags
-import org.thoughtcrime.securesms.util.SingleLiveEvent
 import org.thoughtcrime.securesms.util.livedata.LiveDataUtil
 import org.thoughtcrime.securesms.util.livedata.Store
 import java.util.Optional
 
 sealed class ConversationSettingsViewModel(
+  private val callMessageIds: LongArray,
   private val repository: ConversationSettingsRepository,
-  specificSettingsState: SpecificSettingsState,
+  specificSettingsState: SpecificSettingsState
 ) : ViewModel() {
 
   private val openedMediaCursors = HashSet<Cursor>()
@@ -44,12 +49,12 @@ sealed class ConversationSettingsViewModel(
       specificSettingsState = specificSettingsState
     )
   )
-  protected val internalEvents = SingleLiveEvent<ConversationSettingsEvent>()
+  protected val internalEvents: Subject<ConversationSettingsEvent> = PublishSubject.create()
 
   private val sharedMediaUpdateTrigger = MutableLiveData(Unit)
 
   val state: LiveData<ConversationSettingsState> = store.stateLiveData
-  val events: LiveData<ConversationSettingsEvent> = internalEvents
+  val events: Observable<ConversationSettingsEvent> = internalEvents.observeOn(AndroidSchedulers.mainThread())
 
   protected val disposable = CompositeDisposable()
 
@@ -59,6 +64,10 @@ sealed class ConversationSettingsViewModel(
 
     val sharedMedia: LiveData<Optional<Cursor>> = LiveDataUtil.mapAsync(SignalExecutors.BOUNDED, updater) { tId ->
       repository.getThreadMedia(tId)
+    }
+
+    store.update(repository.getCallEvents(callMessageIds).toObservable()) { callRecords, state ->
+      state.copy(calls = callRecords.map { CallPreference.Model(it) })
     }
 
     store.update(sharedMedia) { cursor, state ->
@@ -125,8 +134,10 @@ sealed class ConversationSettingsViewModel(
 
   private class RecipientSettingsViewModel(
     private val recipientId: RecipientId,
+    private val callMessageIds: LongArray,
     private val repository: ConversationSettingsRepository
   ) : ConversationSettingsViewModel(
+    callMessageIds,
     repository,
     SpecificSettingsState.RecipientSettingsState()
   ) {
@@ -148,12 +159,13 @@ sealed class ConversationSettingsViewModel(
         state.copy(
           recipient = recipient,
           buttonStripState = ButtonStripPreference.State(
+            isMessageAvailable = callMessageIds.isNotEmpty(),
             isVideoAvailable = recipient.registered == RecipientTable.RegisteredState.REGISTERED && !recipient.isSelf && !recipient.isBlocked && !recipient.isReleaseNotes,
             isAudioAvailable = isAudioAvailable,
             isAudioSecure = recipient.registered == RecipientTable.RegisteredState.REGISTERED,
             isMuted = recipient.isMuted,
             isMuteAvailable = !recipient.isSelf,
-            isSearchAvailable = true
+            isSearchAvailable = callMessageIds.isEmpty()
           ),
           disappearingMessagesLifespan = recipient.expiresInSeconds,
           canModifyBlockedState = !recipient.isSelf && RecipientUtil.isBlockable(recipient),
@@ -161,7 +173,8 @@ sealed class ConversationSettingsViewModel(
             contactLinkState = when {
               recipient.isSelf || recipient.isReleaseNotes || recipient.isBlocked -> ContactLinkState.NONE
               recipient.isSystemContact -> ContactLinkState.OPEN
-              else -> ContactLinkState.ADD
+              recipient.hasE164() -> ContactLinkState.ADD
+              else -> ContactLinkState.NONE
             }
           )
         )
@@ -210,7 +223,7 @@ sealed class ConversationSettingsViewModel(
 
     override fun onAddToGroup() {
       repository.getGroupMembership(recipientId) {
-        internalEvents.postValue(ConversationSettingsEvent.AddToAGroup(recipientId, it))
+        internalEvents.onNext(ConversationSettingsEvent.AddToAGroup(recipientId, it))
       }
     }
 
@@ -252,8 +265,9 @@ sealed class ConversationSettingsViewModel(
 
   private class GroupSettingsViewModel(
     private val groupId: GroupId,
+    private val callMessageIds: LongArray,
     private val repository: ConversationSettingsRepository
-  ) : ConversationSettingsViewModel(repository, SpecificSettingsState.GroupSettingsState(groupId)) {
+  ) : ConversationSettingsViewModel(callMessageIds, repository, SpecificSettingsState.GroupSettingsState(groupId)) {
 
     private val liveGroup = LiveGroup(groupId)
 
@@ -267,13 +281,14 @@ sealed class ConversationSettingsViewModel(
         state.copy(
           recipient = recipient,
           buttonStripState = ButtonStripPreference.State(
+            isMessageAvailable = callMessageIds.isNotEmpty(),
             isVideoAvailable = recipient.isPushV2Group && !recipient.isBlocked && isActive,
             isAudioAvailable = false,
             isAudioSecure = recipient.isPushV2Group,
             isMuted = recipient.isMuted,
             isMuteAvailable = true,
-            isSearchAvailable = true,
-            isAddToStoryAvailable = recipient.isPushV2Group && !recipient.isBlocked && isActive
+            isSearchAvailable = callMessageIds.isEmpty(),
+            isAddToStoryAvailable = recipient.isPushV2Group && !recipient.isBlocked && isActive && !SignalStore.storyValues().isFeatureDisabled
           ),
           canModifyBlockedState = RecipientUtil.isBlockable(recipient),
           specificSettingsState = state.requireGroupSettingsState().copy(
@@ -403,8 +418,7 @@ sealed class ConversationSettingsViewModel(
     override fun onAddToGroup() {
       repository.getGroupCapacity(groupId) { capacityResult ->
         if (capacityResult.getRemainingCapacity() > 0) {
-
-          internalEvents.postValue(
+          internalEvents.onNext(
             ConversationSettingsEvent.AddMembersToGroup(
               groupId,
               capacityResult.getSelectionWarning(),
@@ -414,7 +428,7 @@ sealed class ConversationSettingsViewModel(
             )
           )
         } else {
-          internalEvents.postValue(ConversationSettingsEvent.ShowGroupHardLimitDialog)
+          internalEvents.onNext(ConversationSettingsEvent.ShowGroupHardLimitDialog)
         }
       }
     }
@@ -426,14 +440,14 @@ sealed class ConversationSettingsViewModel(
         when (it) {
           is GroupAddMembersResult.Success -> {
             if (it.newMembersInvited.isNotEmpty()) {
-              internalEvents.postValue(ConversationSettingsEvent.ShowGroupInvitesSentDialog(it.newMembersInvited))
+              internalEvents.onNext(ConversationSettingsEvent.ShowGroupInvitesSentDialog(it.newMembersInvited))
             }
 
             if (it.numberOfMembersAdded > 0) {
-              internalEvents.postValue(ConversationSettingsEvent.ShowMembersAdded(it.numberOfMembersAdded))
+              internalEvents.onNext(ConversationSettingsEvent.ShowMembersAdded(it.numberOfMembersAdded))
             }
           }
-          is GroupAddMembersResult.Failure -> internalEvents.postValue(ConversationSettingsEvent.ShowAddMembersToGroupError(it.reason))
+          is GroupAddMembersResult.Failure -> internalEvents.onNext(ConversationSettingsEvent.ShowAddMembersToGroupError(it.reason))
         }
       }
     }
@@ -468,7 +482,7 @@ sealed class ConversationSettingsViewModel(
 
     override fun initiateGroupUpgrade() {
       repository.getExternalPossiblyMigratedGroupRecipientId(groupId) {
-        internalEvents.postValue(ConversationSettingsEvent.InitiateGroupMigration(it))
+        internalEvents.onNext(ConversationSettingsEvent.InitiateGroupMigration(it))
       }
     }
   }
@@ -476,15 +490,16 @@ sealed class ConversationSettingsViewModel(
   class Factory(
     private val recipientId: RecipientId? = null,
     private val groupId: GroupId? = null,
-    private val repository: ConversationSettingsRepository,
+    private val callMessageIds: LongArray,
+    private val repository: ConversationSettingsRepository
   ) : ViewModelProvider.Factory {
 
     override fun <T : ViewModel> create(modelClass: Class<T>): T {
       return requireNotNull(
         modelClass.cast(
           when {
-            recipientId != null -> RecipientSettingsViewModel(recipientId, repository)
-            groupId != null -> GroupSettingsViewModel(groupId, repository)
+            recipientId != null -> RecipientSettingsViewModel(recipientId, callMessageIds, repository)
+            groupId != null -> GroupSettingsViewModel(groupId, callMessageIds, repository)
             else -> error("One of RecipientId or GroupId required.")
           }
         )

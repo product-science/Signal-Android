@@ -31,7 +31,7 @@ public class LocalBackupListener extends PersistentAlarmManagerListener {
   @Override
   protected long onAlarm(Context context, long scheduledTime) {
     if (SignalStore.settings().isBackupEnabled()) {
-      LocalBackupJob.enqueue(shouldScheduleExact());
+      LocalBackupJob.enqueue(false);
     }
 
     return setNextBackupTimeToIntervalFromNow(context);
@@ -49,9 +49,11 @@ public class LocalBackupListener extends PersistentAlarmManagerListener {
     if (Build.VERSION.SDK_INT < 31) {
       nextTime = System.currentTimeMillis() + INTERVAL;
     } else {
-      LocalDateTime now  = LocalDateTime.now();
-      LocalDateTime next = now.withHour(2).withMinute(0).withSecond(0);
-      if (now.getHour() >= 2) {
+      LocalDateTime now    = LocalDateTime.now();
+      int           hour   = SignalStore.settings().getBackupHour();
+      int           minute = SignalStore.settings().getBackupMinute();
+      LocalDateTime next   = now.withHour(hour).withMinute(minute).withSecond(0);
+      if (now.isAfter(next)) {
         next = next.plusDays(1);
       }
 

@@ -8,25 +8,23 @@ import android.content.DialogInterface
 import android.content.Intent
 import android.graphics.PorterDuff
 import android.graphics.PorterDuffColorFilter
-import android.os.Build
 import android.os.Bundle
+import android.text.Annotation
+import android.text.SpannableString
 import android.text.SpannableStringBuilder
 import android.view.LayoutInflater
 import android.view.Menu
 import android.view.View
 import android.view.ViewGroup
-import android.view.ViewGroup.GONE
-import android.view.ViewGroup.MarginLayoutParams
-import android.view.ViewGroup.VISIBLE
 import android.view.animation.PathInterpolator
 import android.widget.Toast
 import androidx.appcompat.view.menu.MenuBuilder
 import androidx.core.app.ShareCompat
 import androidx.core.content.ContextCompat
+import androidx.core.text.getSpans
 import androidx.core.view.ViewCompat
 import androidx.core.view.WindowInsetsCompat
 import androidx.core.view.isVisible
-import androidx.fragment.app.Fragment
 import androidx.fragment.app.viewModels
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.LinearSmoothScroller
@@ -41,14 +39,17 @@ import io.reactivex.rxjava3.android.schedulers.AndroidSchedulers
 import io.reactivex.rxjava3.kotlin.subscribeBy
 import org.signal.core.util.concurrent.SignalExecutors
 import org.signal.core.util.logging.Log
+import org.thoughtcrime.securesms.LoggingFragment
 import org.thoughtcrime.securesms.R
 import org.thoughtcrime.securesms.attachments.DatabaseAttachment
 import org.thoughtcrime.securesms.components.ViewBinderDelegate
+import org.thoughtcrime.securesms.components.mention.MentionAnnotation
 import org.thoughtcrime.securesms.conversation.mutiselect.forward.MultiselectForwardFragment
 import org.thoughtcrime.securesms.conversation.mutiselect.forward.MultiselectForwardFragmentArgs
 import org.thoughtcrime.securesms.database.MediaTable
 import org.thoughtcrime.securesms.database.SignalDatabase
 import org.thoughtcrime.securesms.databinding.FragmentMediaPreviewV2Binding
+import org.thoughtcrime.securesms.mediapreview.caption.ExpandingCaptionView
 import org.thoughtcrime.securesms.mediapreview.mediarail.CenterDecoration
 import org.thoughtcrime.securesms.mediapreview.mediarail.MediaRailAdapter
 import org.thoughtcrime.securesms.mediapreview.mediarail.MediaRailAdapter.ImageLoadingListener
@@ -74,22 +75,24 @@ import java.util.Locale
 import java.util.concurrent.TimeUnit
 import kotlin.math.roundToInt
 
-class MediaPreviewV2Fragment : Fragment(R.layout.fragment_media_preview_v2), MediaPreviewFragment.Events {
-  private val TAG = Log.tag(MediaPreviewV2Fragment::class.java)
+class MediaPreviewV2Fragment : LoggingFragment(R.layout.fragment_media_preview_v2), MediaPreviewFragment.Events {
 
   private val lifecycleDisposable = LifecycleDisposable()
   private val binding by ViewBinderDelegate(FragmentMediaPreviewV2Binding::bind)
-  private val viewModel: MediaPreviewV2ViewModel by viewModels()
+  private val viewModel: MediaPreviewV2ViewModel by viewModels(ownerProducer = {
+    requireActivity()
+  })
   private val debouncer = Debouncer(2, TimeUnit.SECONDS)
 
-  private lateinit var fullscreenHelper: FullscreenHelper
+  private lateinit var pagerAdapter: MediaPreviewV2Adapter
   private lateinit var albumRailAdapter: MediaRailAdapter
+  private lateinit var fullscreenHelper: FullscreenHelper
 
   private var individualItemWidth: Int = 0
 
   override fun onAttach(context: Context) {
     super.onAttach(context)
-    fullscreenHelper = FullscreenHelper(requireActivity())
+    fullscreenHelper = FullscreenHelper(requireActivity(), true)
     individualItemWidth = context.resources.getDimension(R.dimen.media_rail_item_size).roundToInt()
   }
 
@@ -108,9 +111,14 @@ class MediaPreviewV2Fragment : Fragment(R.layout.fragment_media_preview_v2), Med
     initializeAlbumRail()
     initializeFullScreenUi()
     anchorMarginsToBottomInsets(binding.mediaPreviewDetailsContainer)
-    lifecycleDisposable += viewModel.state.distinctUntilChanged().observeOn(AndroidSchedulers.mainThread()).subscribe {
-      bindCurrentState(it)
-    }
+    lifecycleDisposable +=
+      viewModel
+        .state
+        .distinctUntilChanged()
+        .observeOn(AndroidSchedulers.mainThread())
+        .subscribe {
+          bindCurrentState(it)
+        }
   }
 
   private fun initializeViewModel(args: MediaIntentFactory.MediaPreviewArgs) {
@@ -123,13 +131,13 @@ class MediaPreviewV2Fragment : Fragment(R.layout.fragment_media_preview_v2), Med
     }
     viewModel.initialize(args.showThread, args.allMediaInRail, args.leftIsRecent)
     val sorting = MediaTable.Sorting.deserialize(args.sorting.ordinal)
-    viewModel.fetchAttachments(PartAuthority.requireAttachmentId(args.initialMediaUri), args.threadId, sorting)
+    viewModel.fetchAttachments(requireContext(), PartAuthority.requireAttachmentId(args.initialMediaUri), args.threadId, sorting)
   }
 
   @SuppressLint("RestrictedApi")
   private fun initializeToolbar(toolbar: MaterialToolbar) {
     toolbar.setNavigationOnClickListener {
-      requireActivity().onBackPressed()
+      requireActivity().onBackPressedDispatcher.onBackPressed()
     }
 
     toolbar.setTitleTextAppearance(requireContext(), R.style.Signal_Text_TitleMedium)
@@ -141,11 +149,14 @@ class MediaPreviewV2Fragment : Fragment(R.layout.fragment_media_preview_v2), Med
   private fun initializeViewPager() {
     binding.mediaPager.offscreenPageLimit = OFFSCREEN_PAGE_LIMIT_DEFAULT
     binding.mediaPager.setPageTransformer(MarginPageTransformer(ViewUtil.dpToPx(24)))
-    val adapter = MediaPreviewV2Adapter(this)
-    binding.mediaPager.adapter = adapter
+    pagerAdapter = MediaPreviewV2Adapter(this)
+    binding.mediaPager.adapter = pagerAdapter
     binding.mediaPager.registerOnPageChangeCallback(object : OnPageChangeCallback() {
       override fun onPageSelected(position: Int) {
         super.onPageSelected(position)
+        if (position != viewModel.currentPosition) {
+          debouncer.clear()
+        }
         viewModel.setCurrentPage(position)
       }
     })
@@ -160,11 +171,14 @@ class MediaPreviewV2Fragment : Fragment(R.layout.fragment_media_preview_v2), Med
         { media -> jumpViewPagerToMedia(media) },
         object : ImageLoadingListener() {
           override fun onAllRequestsFinished() {
-            crossfadeViewIn(this@apply)
+            val willAnimateIn = crossfadeViewIn(this@apply)
+            if (!willAnimateIn) {
+              visible = true
+            }
           }
         }
       )
-      this.adapter = albumRailAdapter
+      adapter = albumRailAdapter
     }
   }
 
@@ -181,20 +195,19 @@ class MediaPreviewV2Fragment : Fragment(R.layout.fragment_media_preview_v2), Med
     when (currentState.loadState) {
       MediaPreviewV2State.LoadState.DATA_LOADED -> bindDataLoadedState(currentState)
       MediaPreviewV2State.LoadState.MEDIA_READY -> bindMediaReadyState(currentState)
-      else -> null
+      else -> Unit
     }
   }
 
   private fun bindDataLoadedState(currentState: MediaPreviewV2State) {
     val currentPosition = currentState.position
-    val fragmentAdapter = binding.mediaPager.adapter as MediaPreviewV2Adapter
 
     val backingItems = currentState.mediaRecords.mapNotNull { it.attachment }
     if (backingItems.isEmpty()) {
       onMediaNotAvailable()
       return
     }
-    fragmentAdapter.updateBackingItems(backingItems)
+    pagerAdapter.updateBackingItems(backingItems)
 
     if (binding.mediaPager.currentItem != currentPosition) {
       binding.mediaPager.setCurrentItem(currentPosition, false)
@@ -212,17 +225,17 @@ class MediaPreviewV2Fragment : Fragment(R.layout.fragment_media_preview_v2), Med
       return
     }
 
-    val currentPosition = currentState.position
+    val currentPosition: Int = currentState.position
     val currentItem: MediaTable.MediaRecord = currentState.mediaRecords[currentPosition]
+    val currentItemTag: String? = pagerAdapter.getFragmentTag(currentPosition)
 
-    // pause all other fragments
-    childFragmentManager.fragments.map { fragment ->
-      if (fragment.tag != "f$currentPosition") {
+    childFragmentManager.fragments.forEach { fragment ->
+      if (fragment.tag != currentItemTag) {
         (fragment as? MediaPreviewFragment)?.pause()
       }
     }
 
-    bindTextViews(currentItem, currentState.showThread)
+    bindTextViews(currentItem, currentState.showThread, currentState.messageBodies)
     bindMenuItems(currentItem)
     bindMediaPreviewPlaybackControls(currentItem, getMediaPreviewFragmentFromChildFragmentManager(currentPosition))
 
@@ -232,17 +245,21 @@ class MediaPreviewV2Fragment : Fragment(R.layout.fragment_media_preview_v2), Med
       currentState.albums[currentItem.attachment?.mmsId] ?: emptyList()
     }
     bindAlbumRail(albumThumbnailMedia, currentItem)
+
     crossfadeViewIn(binding.mediaPreviewDetailsContainer)
   }
 
-  private fun bindTextViews(currentItem: MediaTable.MediaRecord, showThread: Boolean) {
+  private fun bindTextViews(currentItem: MediaTable.MediaRecord, showThread: Boolean, messageBodies: Map<Long, SpannableString>) {
     binding.toolbar.title = getTitleText(currentItem, showThread)
     binding.toolbar.subtitle = getSubTitleText(currentItem)
     val messageId: Long? = currentItem.attachment?.mmsId
     if (messageId != null) {
       binding.toolbar.setOnClickListener { v ->
-        viewModel.jumpToFragment(v.context, messageId).subscribeBy(
-          onSuccess = { startActivity(it) },
+        lifecycleDisposable += viewModel.jumpToFragment(v.context, messageId).subscribeBy(
+          onSuccess = {
+            startActivity(it)
+            requireActivity().finish()
+          },
           onError = {
             Log.e(TAG, "Could not find message position for message ID: $messageId", it)
             Toast.makeText(v.context, R.string.MediaPreviewActivity_error_finding_message, Toast.LENGTH_LONG).show()
@@ -252,8 +269,27 @@ class MediaPreviewV2Fragment : Fragment(R.layout.fragment_media_preview_v2), Med
     }
 
     val caption = currentItem.attachment?.caption
-    binding.mediaPreviewCaption.text = caption
-    binding.mediaPreviewCaption.visible = caption != null
+    if (caption != null) {
+      bindCaptionView(SpannableString(caption))
+    } else {
+      bindCaptionView(messageBodies[messageId])
+    }
+  }
+
+  private fun bindCaptionView(displayBody: SpannableString?) {
+    val caption: ExpandingCaptionView = binding.mediaPreviewCaption
+    if (displayBody.isNullOrEmpty()) {
+      caption.visible = false
+    } else {
+      caption.expandedHeight = calculateExpandedHeight()
+      caption.fullCaptionText = displayBody.removeMentionAnnotations()
+      caption.visible = true
+    }
+  }
+
+  private fun calculateExpandedHeight(): Int {
+    val height: Int = view?.height ?: return ViewUtil.dpToPx(requireContext(), EXPANDED_CAPTION_HEIGHT_FALLBACK_DP)
+    return ((height - binding.toolbar.height - binding.mediaPreviewPlaybackControls.height) * EXPANDED_CAPTION_HEIGHT_PERCENT).roundToInt()
   }
 
   private fun bindMenuItems(currentItem: MediaTable.MediaRecord) {
@@ -291,69 +327,76 @@ class MediaPreviewV2Fragment : Fragment(R.layout.fragment_media_preview_v2), Med
       forward(currentItem)
     }
     currentFragment?.setBottomButtonControls(binding.mediaPreviewPlaybackControls)
+    currentFragment?.autoPlayIfNeeded()
   }
 
   private fun bindAlbumRail(albumThumbnailMedia: List<Media>, currentItem: MediaTable.MediaRecord) {
     val albumRail: RecyclerView = binding.mediaPreviewPlaybackControls.recyclerView
     if (albumThumbnailMedia.size > 1) {
-      val albumPosition = albumThumbnailMedia.indexOfFirst { it.uri == currentItem.attachment?.uri }
-      if (albumRail.visibility == GONE) {
+      val firstRailDisplay = albumRail.visibility == View.GONE
+      if (firstRailDisplay) {
         albumRail.visibility = View.INVISIBLE
+        albumRail.alpha = 0f
       }
-
-      albumRailAdapter.currentItemPosition = albumPosition
-      albumRailAdapter.submitList(albumThumbnailMedia)
-      scrollAlbumRailToCurrentAdapterPosition()
+      val railItems = albumThumbnailMedia.map { MediaRailAdapter.MediaRailItem(it, it.uri == currentItem.attachment?.uri) }
+      albumRailAdapter.submitList(railItems) {
+        albumRail.post {
+          scrollAlbumRailToCurrentAdapterPosition(!firstRailDisplay)
+          crossfadeViewIn(albumRail)
+        }
+      }
     } else {
       albumRail.visibility = View.GONE
       albumRailAdapter.submitList(emptyList())
-      albumRailAdapter.imageLoadingListener.reset()
     }
   }
 
-  private fun scrollAlbumRailToCurrentAdapterPosition() {
-    val currentItemPosition = albumRailAdapter.currentItemPosition
-    val currentList = albumRailAdapter.currentList
-    val albumRail: RecyclerView = binding.mediaPreviewPlaybackControls.recyclerView
-    albumRail.scrollToPosition(currentItemPosition)
-    for (i in currentList.indices) {
-      val isSelected = i == currentItemPosition
-      val stableId = albumRailAdapter.getItemId(i)
-      val viewHolder = albumRail.findViewHolderForItemId(stableId) as? MediaRailAdapter.MediaRailViewHolder
-      viewHolder?.setSelectedItem(isSelected)
+  private fun scrollAlbumRailToCurrentAdapterPosition(smooth: Boolean = true) {
+    if (!isResumed) {
+      return
     }
+
+    val currentItemPosition = albumRailAdapter.findSelectedItemPosition()
+    val albumRail: RecyclerView = binding.mediaPreviewPlaybackControls.recyclerView
     val offsetFromStart = (albumRail.width - individualItemWidth) / 2
     val smoothScroller = OffsetSmoothScroller(requireContext(), offsetFromStart)
     smoothScroller.targetPosition = currentItemPosition
     val layoutManager = albumRail.layoutManager as LinearLayoutManager
-    layoutManager.startSmoothScroll(smoothScroller)
+    if (smooth) {
+      layoutManager.scrollToPosition(currentItemPosition)
+      layoutManager.startSmoothScroll(smoothScroller)
+    } else {
+      layoutManager.scrollToPositionWithOffset(currentItemPosition, offsetFromStart)
+    }
   }
 
-  private fun crossfadeViewIn(view: View, duration: Long = 200) {
-    if (!view.isVisible && !fullscreenHelper.isSystemUiVisible) {
+  private fun crossfadeViewIn(view: View, duration: Long = 200): Boolean {
+    return if (!view.isVisible && !fullscreenHelper.isSystemUiVisible) {
       val viewPropertyAnimator = view.animate()
         .alpha(1f)
         .setDuration(duration)
         .withStartAction {
-          view.visibility = VISIBLE
+          view.visibility = View.VISIBLE
         }
         .withEndAction {
           if (getView() != null && view == binding.mediaPreviewPlaybackControls.recyclerView) {
             scrollAlbumRailToCurrentAdapterPosition()
           }
         }
-      if (Build.VERSION.SDK_INT >= 21) {
-        viewPropertyAnimator.interpolator = PathInterpolator(0.17f, 0.17f, 0f, 1f)
-      }
+      viewPropertyAnimator.interpolator = PathInterpolator(0.17f, 0.17f, 0f, 1f)
       viewPropertyAnimator.start()
+      true
+    } else {
+      false
     }
   }
 
-  private fun getMediaPreviewFragmentFromChildFragmentManager(currentPosition: Int) = childFragmentManager.findFragmentByTag("f$currentPosition") as? MediaPreviewFragment
+  private fun getMediaPreviewFragmentFromChildFragmentManager(currentPosition: Int): MediaPreviewFragment? {
+    return childFragmentManager.findFragmentByTag(pagerAdapter.getFragmentTag(currentPosition)) as? MediaPreviewFragment
+  }
 
   private fun jumpViewPagerToMedia(media: Media) {
-    val viewPagerAdapter = binding.mediaPager.adapter as MediaPreviewV2Adapter
-    val position = viewPagerAdapter.findItemPosition(media)
+    val position = pagerAdapter.findItemPosition(media)
     binding.mediaPager.setCurrentItem(position, true)
   }
 
@@ -402,7 +445,7 @@ class MediaPreviewV2Fragment : Fragment(R.layout.fragment_media_preview_v2), Med
 
   private fun anchorMarginsToBottomInsets(viewToAnchor: View) {
     ViewCompat.setOnApplyWindowInsetsListener(viewToAnchor) { view: View, windowInsetsCompat: WindowInsetsCompat ->
-      val layoutParams = view.layoutParams as MarginLayoutParams
+      val layoutParams = view.layoutParams as ViewGroup.MarginLayoutParams
       layoutParams.setMargins(
         windowInsetsCompat.systemWindowInsetLeft,
         layoutParams.topMargin,
@@ -432,8 +475,19 @@ class MediaPreviewV2Fragment : Fragment(R.layout.fragment_media_preview_v2), Med
     debouncer.publish { fullscreenHelper.hideSystemUI() }
   }
 
-  override fun onStopped() {
-    debouncer.clear()
+  override fun onStopped(tag: String?) {
+    if (tag == null) {
+      return
+    }
+
+    if (pagerAdapter.getFragmentTag(viewModel.currentPosition) == tag) {
+      debouncer.clear()
+    }
+  }
+
+  override fun unableToPlayMedia() {
+    Toast.makeText(requireContext(), R.string.MediaPreviewActivity_unable_to_play_media, Toast.LENGTH_LONG).show()
+    requireActivity().finish()
   }
 
   private fun forward(mediaItem: MediaTable.MediaRecord) {
@@ -488,6 +542,7 @@ class MediaPreviewV2Fragment : Fragment(R.layout.fragment_media_preview_v2), Med
     }
   }
 
+  @Suppress("DEPRECATION")
   fun performSaveToDisk(mediaItem: MediaTable.MediaRecord) {
     val saveTask = SaveAttachmentTask(requireContext())
     val saveDate = if (mediaItem.date > 0) mediaItem.date else System.currentTimeMillis()
@@ -544,7 +599,7 @@ class MediaPreviewV2Fragment : Fragment(R.layout.fragment_media_preview_v2), Med
   fun canRemotelyDelete(attachment: DatabaseAttachment): Boolean {
     val mmsId = attachment.mmsId
     val attachmentCount = SignalDatabase.attachments.getAttachmentsForMessage(mmsId).size
-    return attachmentCount <= 1 && RemoteDeleteUtil.isValidSend(listOf(SignalDatabase.mms.getMessageRecord(mmsId)), System.currentTimeMillis())
+    return attachmentCount <= 1 && RemoteDeleteUtil.isValidSend(listOf(SignalDatabase.messages.getMessageRecord(mmsId)), System.currentTimeMillis())
   }
 
   private fun editMediaItem(currentItem: MediaTable.MediaRecord) {
@@ -582,6 +637,11 @@ class MediaPreviewV2Fragment : Fragment(R.layout.fragment_media_preview_v2), Med
   }
 
   companion object {
+    private const val EXPANDED_CAPTION_HEIGHT_FALLBACK_DP = 400
+    private const val EXPANDED_CAPTION_HEIGHT_PERCENT: Float = 0.7F
+
+    private val TAG = Log.tag(MediaPreviewV2Fragment::class.java)
+
     const val ARGS_KEY: String = "args"
 
     @JvmStatic
@@ -589,4 +649,14 @@ class MediaPreviewV2Fragment : Fragment(R.layout.fragment_media_preview_v2), Med
       return MediaUtil.isImageType(contentType) || MediaUtil.isVideoType(contentType)
     }
   }
+}
+
+private fun SpannableString.removeMentionAnnotations(): CharSequence {
+  val spans: Array<out Annotation> = this.getSpans()
+  spans.forEach {
+    if (MentionAnnotation.isMentionAnnotation(it)) {
+      this.removeSpan(it)
+    }
+  }
+  return this
 }

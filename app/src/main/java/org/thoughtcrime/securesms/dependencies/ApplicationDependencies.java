@@ -24,7 +24,6 @@ import org.thoughtcrime.securesms.keyvalue.SignalStore;
 import org.thoughtcrime.securesms.megaphone.MegaphoneRepository;
 import org.thoughtcrime.securesms.messages.BackgroundMessageRetriever;
 import org.thoughtcrime.securesms.messages.IncomingMessageObserver;
-import org.thoughtcrime.securesms.messages.IncomingMessageProcessor;
 import org.thoughtcrime.securesms.net.StandardUserAgentInterceptor;
 import org.thoughtcrime.securesms.notifications.MessageNotifier;
 import org.thoughtcrime.securesms.payments.Payments;
@@ -35,6 +34,7 @@ import org.thoughtcrime.securesms.revealable.ViewOnceMessageManager;
 import org.thoughtcrime.securesms.service.ExpiringMessageManager;
 import org.thoughtcrime.securesms.service.ExpiringStoriesManager;
 import org.thoughtcrime.securesms.service.PendingRetryReceiptManager;
+import org.thoughtcrime.securesms.service.ScheduledMessageManager;
 import org.thoughtcrime.securesms.service.TrimThreadsByDateManager;
 import org.thoughtcrime.securesms.service.webrtc.SignalCallManager;
 import org.thoughtcrime.securesms.shakereport.ShakeToReport;
@@ -86,6 +86,7 @@ public class ApplicationDependencies {
   private static final Object LOCK                    = new Object();
   private static final Object FRAME_RATE_TRACKER_LOCK = new Object();
   private static final Object JOB_MANAGER_LOCK        = new Object();
+  private static final Object SIGNAL_HTTP_CLIENT_LOCK = new Object();
 
   private static Application           application;
   private static Provider              provider;
@@ -95,7 +96,6 @@ public class ApplicationDependencies {
   private static volatile SignalServiceMessageSender   messageSender;
   private static volatile SignalServiceMessageReceiver messageReceiver;
   private static volatile IncomingMessageObserver      incomingMessageObserver;
-  private static volatile IncomingMessageProcessor     incomingMessageProcessor;
   private static volatile BackgroundMessageRetriever   backgroundMessageRetriever;
   private static volatile LiveRecipientCache           recipientCache;
   private static volatile JobManager                   jobManager;
@@ -129,6 +129,7 @@ public class ApplicationDependencies {
   private static volatile ProfileService               profileService;
   private static volatile DeadlockDetector             deadlockDetector;
   private static volatile ClientZkReceiptOperations    clientZkReceiptOperations;
+  private static volatile ScheduledMessageManager      scheduledMessagesManager;
 
   @MainThread
   public static void init(@NonNull Application application, @NonNull Provider provider) {
@@ -269,18 +270,6 @@ public class ApplicationDependencies {
 
   public static @NonNull SignalServiceNetworkAccess getSignalServiceNetworkAccess() {
     return provider.provideSignalServiceNetworkAccess();
-  }
-
-  public static @NonNull IncomingMessageProcessor getIncomingMessageProcessor() {
-    if (incomingMessageProcessor == null) {
-      synchronized (LOCK) {
-        if (incomingMessageProcessor == null) {
-          incomingMessageProcessor = provider.provideIncomingMessageProcessor();
-        }
-      }
-    }
-
-    return incomingMessageProcessor;
   }
 
   public static @NonNull BackgroundMessageRetriever getBackgroundMessageRetriever() {
@@ -441,6 +430,18 @@ public class ApplicationDependencies {
     return expiringMessageManager;
   }
 
+  public static @NonNull ScheduledMessageManager getScheduledMessageManager() {
+    if (scheduledMessagesManager == null) {
+      synchronized (LOCK) {
+        if (scheduledMessagesManager == null) {
+          scheduledMessagesManager = provider.provideScheduledMessageManager();
+        }
+      }
+    }
+
+    return scheduledMessagesManager;
+  }
+
   public static TypingStatusRepository getTypingStatusRepository() {
     if (typingStatusRepository == null) {
       synchronized (LOCK) {
@@ -530,7 +531,7 @@ public class ApplicationDependencies {
 
   public static @NonNull OkHttpClient getSignalOkHttpClient() {
     if (signalOkHttpClient == null) {
-      synchronized (LOCK) {
+      synchronized (SIGNAL_HTTP_CLIENT_LOCK) {
         if (signalOkHttpClient == null) {
           try {
             OkHttpClient   baseClient    = ApplicationDependencies.getOkHttpClient();
@@ -678,7 +679,6 @@ public class ApplicationDependencies {
     @NonNull SignalServiceMessageSender provideSignalServiceMessageSender(@NonNull SignalWebSocket signalWebSocket, @NonNull SignalServiceDataStore protocolStore, @NonNull SignalServiceConfiguration signalServiceConfiguration);
     @NonNull SignalServiceMessageReceiver provideSignalServiceMessageReceiver(@NonNull SignalServiceConfiguration signalServiceConfiguration);
     @NonNull SignalServiceNetworkAccess provideSignalServiceNetworkAccess();
-    @NonNull IncomingMessageProcessor provideIncomingMessageProcessor();
     @NonNull BackgroundMessageRetriever provideBackgroundMessageRetriever();
     @NonNull LiveRecipientCache provideRecipientCache();
     @NonNull JobManager provideJobManager();
@@ -710,5 +710,6 @@ public class ApplicationDependencies {
     @NonNull DeadlockDetector provideDeadlockDetector();
     @NonNull ClientZkReceiptOperations provideClientZkReceiptOperations(@NonNull SignalServiceConfiguration signalServiceConfiguration);
     @NonNull KeyBackupService provideKeyBackupService(@NonNull SignalServiceAccountManager signalServiceAccountManager, @NonNull KeyStore keyStore, @NonNull KbsEnclave enclave);
+    @NonNull ScheduledMessageManager provideScheduledMessageManager();
   }
 }
