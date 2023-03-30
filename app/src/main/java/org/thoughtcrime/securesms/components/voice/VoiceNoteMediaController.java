@@ -99,7 +99,7 @@ public class VoiceNoteMediaController implements DefaultLifecycleObserver {
     });
   }
 
-  public void ensureMediaBrowser() {
+  private void ensureMediaBrowser() {
     if (mediaBrowser != null) {
       return;
     }
@@ -127,14 +127,6 @@ public class VoiceNoteMediaController implements DefaultLifecycleObserver {
     }
   }
 
-  @Override
-  public void onResume(@NonNull LifecycleOwner owner) {
-    if (mediaBrowser == null && isMediaBrowserCreationPostponed) {
-      return;
-    }
-
-    ensureMediaBrowser();
-  }
 
   @Override
   public void onPause(@NonNull LifecycleOwner owner) {
@@ -182,6 +174,7 @@ public class VoiceNoteMediaController implements DefaultLifecycleObserver {
 
   public void startConsecutivePlayback(@NonNull Uri audioSlideUri, long messageId, double progress) {
     onConnectRunnable = () -> startPlayback(audioSlideUri, messageId, -1, progress, false);
+    ensureMediaBrowser();
     if (mediaBrowser.isConnected()) {
       mediaBrowser.disconnect();
     }
@@ -190,6 +183,7 @@ public class VoiceNoteMediaController implements DefaultLifecycleObserver {
 
   public void startSinglePlayback(@NonNull Uri audioSlideUri, long messageId, double progress) {
     onConnectRunnable = () -> startPlayback(audioSlideUri, messageId, -1, progress, true);
+    ensureMediaBrowser();
     if (mediaBrowser.isConnected()) {
       mediaBrowser.disconnect();
     }
@@ -198,6 +192,7 @@ public class VoiceNoteMediaController implements DefaultLifecycleObserver {
 
   public void startSinglePlaybackForDraft(@NonNull Uri draftUri, long threadId, double progress) {
     onConnectRunnable = () -> startPlayback(draftUri, -1, threadId, progress, true);
+    ensureMediaBrowser();
     if (mediaBrowser.isConnected()) {
       mediaBrowser.disconnect();
     }
