@@ -513,7 +513,7 @@ public class ConversationParentFragment extends Fragment
       return;
     }
 
-    voiceNoteMediaController = new VoiceNoteMediaController(requireActivity(), true);
+    voiceNoteMediaController = new VoiceNoteMediaController(requireActivity());
     voiceRecorderWakeLock    = new VoiceRecorderWakeLock(requireActivity());
 
     // TODO [alex] LargeScreenSupport -- Should be removed once we move to multi-pane layout.
@@ -3924,7 +3924,6 @@ public class ConversationParentFragment extends Fragment
     if (getActivity() != null) {
       requireActivity().supportStartPostponedEnterTransition();
     }
-    voiceNoteMediaController.finishPostpone();
   }
 
   @Override

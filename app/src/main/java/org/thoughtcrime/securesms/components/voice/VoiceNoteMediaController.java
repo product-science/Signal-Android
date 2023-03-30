@@ -55,18 +55,13 @@ public class VoiceNoteMediaController implements DefaultLifecycleObserver {
   private MutableLiveData<VoiceNotePlaybackState>       voiceNotePlaybackState = new MutableLiveData<>(VoiceNotePlaybackState.NONE);
   private LiveData<Optional<VoiceNotePlayerView.State>> voiceNotePlayerViewState;
   private VoiceNoteProximityWakeLockManager             voiceNoteProximityWakeLockManager;
-  private boolean                                       isMediaBrowserCreationPostponed;
 
   private final MediaControllerCompatCallback mediaControllerCompatCallback = new MediaControllerCompatCallback();
   private Runnable                            onConnectRunnable;
 
-  public VoiceNoteMediaController(@NonNull FragmentActivity activity) {
-    this(activity, false);
-  }
 
-  public VoiceNoteMediaController(@NonNull FragmentActivity activity, boolean postponeMediaBrowserCreation) {
+  public VoiceNoteMediaController(@NonNull FragmentActivity activity) {
     this.activity                        = activity;
-    this.isMediaBrowserCreationPostponed = postponeMediaBrowserCreation;
 
     activity.getLifecycle().addObserver(this);
 
@@ -118,15 +113,6 @@ public class VoiceNoteMediaController implements DefaultLifecycleObserver {
     return voiceNotePlayerViewState;
   }
 
-  public void finishPostpone() {
-    isMediaBrowserCreationPostponed = false;
-    if (activity != null && mediaBrowser == null && activity.getLifecycle().getCurrentState().isAtLeast(Lifecycle.State.RESUMED)) {
-      ensureMediaBrowser();
-      mediaBrowser.disconnect();
-      mediaBrowser.connect();
-    }
-  }
-
 
   @Override
   public void onPause(@NonNull LifecycleOwner owner) {
@@ -135,7 +121,6 @@ public class VoiceNoteMediaController implements DefaultLifecycleObserver {
     if (MediaControllerCompat.getMediaController(activity) != null) {
       MediaControllerCompat.getMediaController(activity).unregisterCallback(mediaControllerCompatCallback);
     }
-
   }
 
   @Override

@@ -74,7 +74,7 @@ public class MainActivity extends PassphraseRequiredActivity implements VoiceNot
         });
 
 
-    mediaController = new VoiceNoteMediaController(this, true);
+    mediaController = new VoiceNoteMediaController(this);
 
     ConversationListTabRepository         repository = new ConversationListTabRepository();
     ConversationListTabsViewModel.Factory factory    = new ConversationListTabsViewModel.Factory(repository);
