@@ -2,18 +2,25 @@ package org.thoughtcrime.securesms.jobs;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
+import androidx.annotation.WorkerThread;
 
 import org.signal.core.util.ThreadUtil;
 import org.thoughtcrime.securesms.database.SignalDatabase;
 import org.thoughtcrime.securesms.dependencies.ApplicationDependencies;
-import org.thoughtcrime.securesms.jobmanager.JsonJobData;
 import org.thoughtcrime.securesms.jobmanager.Job;
+import org.thoughtcrime.securesms.jobmanager.JsonJobData;
 
+/**
+ * A job that effectively debounces thread updates through a combination of having a max instance count
+ * and sleeping at the end of the job to make sure it takes a minimum amount of time.
+ */
 public final class ThreadUpdateJob extends BaseJob {
 
   public static final String KEY = "ThreadUpdateJob";
 
   private static final String KEY_THREAD_ID = "thread_id";
+
+  private static final long DEBOUNCE_INTERVAL = 3000;
 
   private final long threadId;
 
@@ -30,8 +37,13 @@ public final class ThreadUpdateJob extends BaseJob {
     this.threadId = threadId;
   }
 
+  @WorkerThread
   public static void enqueue(long threadId) {
-    ApplicationDependencies.getJobManager().add(new ThreadUpdateJob(threadId));
+    if (ApplicationDependencies.getIncomingMessageObserver().getDecryptionDrained()) {
+      SignalDatabase.threads().update(threadId, true);
+    } else {
+      ApplicationDependencies.getJobManager().add(new ThreadUpdateJob(threadId));
+    }
   }
 
   @Override
@@ -47,7 +59,7 @@ public final class ThreadUpdateJob extends BaseJob {
   @Override
   protected void onRun() throws Exception {
     SignalDatabase.threads().update(threadId, true);
-    ThreadUtil.sleep(1000);
+    ThreadUtil.sleep(DEBOUNCE_INTERVAL);
   }
 
   @Override
