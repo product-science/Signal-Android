@@ -37,6 +37,7 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 import org.json.JSONArray;
 import org.json.JSONException;
 import org.signal.core.util.CursorUtil;
+import org.signal.core.util.SQLiteDatabaseExtensionsKt;
 import org.signal.core.util.SetUtil;
 import org.signal.core.util.SqlUtil;
 import org.signal.core.util.StreamUtil;
@@ -51,6 +52,7 @@ import org.thoughtcrime.securesms.crypto.ClassicDecryptingPartInputStream;
 import org.thoughtcrime.securesms.crypto.ModernDecryptingPartInputStream;
 import org.thoughtcrime.securesms.crypto.ModernEncryptingPartOutputStream;
 import org.thoughtcrime.securesms.database.model.databaseprotos.AudioWaveFormData;
+import org.thoughtcrime.securesms.jobs.GenerateAudioWaveFormJob;
 import org.thoughtcrime.securesms.mms.MediaStream;
 import org.thoughtcrime.securesms.mms.MmsException;
 import org.thoughtcrime.securesms.mms.PartAuthority;
@@ -88,7 +90,7 @@ import java.util.stream.Collectors;
 
 public class AttachmentTable extends DatabaseTable {
 
-  private static final String TAG = Log.tag(AttachmentTable.class);
+  public  static final String TAG = Log.tag(AttachmentTable.class);
 
   public  static final String TABLE_NAME             = "part";
   public  static final String ROW_ID                 = "_id";
@@ -100,7 +102,7 @@ public class AttachmentTable extends DatabaseTable {
           static final String CONTENT_LOCATION       = "cl";
   public  static final String DATA                   = "_data";
           static final String TRANSFER_STATE         = "pending_push";
-  private static final String TRANSFER_FILE          = "transfer_file";
+  public  static final String TRANSFER_FILE          = "transfer_file";
   public  static final String SIZE                   = "data_size";
           static final String FILE_NAME              = "file_name";
   public  static final String UNIQUE_ID              = "unique_id";
@@ -235,7 +237,7 @@ public class AttachmentTable extends DatabaseTable {
     values.put(TRANSFER_STATE, TRANSFER_PROGRESS_FAILED);
 
     database.update(TABLE_NAME, values, PART_ID_WHERE + " AND " + TRANSFER_STATE + " < " + TRANSFER_PROGRESS_PERMANENT_FAILURE, attachmentId.toStrings());
-    notifyConversationListeners(SignalDatabase.mms().getThreadIdForMessage(mmsId));
+    notifyConversationListeners(SignalDatabase.messages().getThreadIdForMessage(mmsId));
   }
 
   public void setTransferProgressPermanentFailure(AttachmentId attachmentId, long mmsId)
@@ -246,7 +248,7 @@ public class AttachmentTable extends DatabaseTable {
     values.put(TRANSFER_STATE, TRANSFER_PROGRESS_PERMANENT_FAILURE);
 
     database.update(TABLE_NAME, values, PART_ID_WHERE, attachmentId.toStrings());
-    notifyConversationListeners(SignalDatabase.mms().getThreadIdForMessage(mmsId));
+    notifyConversationListeners(SignalDatabase.messages().getThreadIdForMessage(mmsId));
   }
 
   public @Nullable DatabaseAttachment getAttachment(@NonNull AttachmentId attachmentId)
@@ -438,7 +440,7 @@ public class AttachmentTable extends DatabaseTable {
       db.update(TABLE_NAME, values, MMS_ID + " = ?", new String[] { mmsId + "" });
       notifyAttachmentListeners();
 
-      long threadId = SignalDatabase.mms().getThreadIdForMessage(mmsId);
+      long threadId = SignalDatabase.messages().getThreadIdForMessage(mmsId);
       if (threadId > 0) {
         notifyConversationListeners(threadId);
       }
@@ -476,7 +478,7 @@ public class AttachmentTable extends DatabaseTable {
 
   public void trimAllAbandonedAttachments() {
     SQLiteDatabase db              = databaseHelper.getSignalWritableDatabase();
-    String         selectAllMmsIds = "SELECT " + MmsTable.ID + " FROM " + MmsTable.TABLE_NAME;
+    String         selectAllMmsIds = "SELECT " + MessageTable.ID + " FROM " + MessageTable.TABLE_NAME;
     String         where           = MMS_ID + " != " + PREUPLOAD_MESSAGE_ID + " AND " + MMS_ID + " NOT IN (" + selectAllMmsIds + ")";
 
     int deletes = db.delete(TABLE_NAME, where, null);
@@ -641,9 +643,9 @@ public class AttachmentTable extends DatabaseTable {
       //noinspection ResultOfMethodCallIgnored
       dataInfo.file.delete();
     } else {
-      long threadId = SignalDatabase.mms().getThreadIdForMessage(mmsId);
+      long threadId = SignalDatabase.messages().getThreadIdForMessage(mmsId);
 
-      if (!SignalDatabase.mms().isStory(mmsId)) {
+      if (!SignalDatabase.messages().isStory(mmsId)) {
         SignalDatabase.threads().updateSnippetUriSilently(threadId, PartAuthority.getAttachmentDataUri(attachmentId));
       }
 
@@ -655,6 +657,10 @@ public class AttachmentTable extends DatabaseTable {
     if (transferFile != null) {
       //noinspection ResultOfMethodCallIgnored
       transferFile.delete();
+    }
+
+    if (placeholder != null && MediaUtil.isAudio(placeholder)) {
+      GenerateAudioWaveFormJob.enqueue(placeholder.getAttachmentId());
     }
   }
 
@@ -812,10 +818,14 @@ public class AttachmentTable extends DatabaseTable {
       Log.i(TAG, "Inserted attachment at ID: " + attachmentId);
     }
 
-    for (Attachment attachment : quoteAttachment) {
-      AttachmentId attachmentId = insertAttachment(mmsId, attachment, true);
-      insertedAttachments.put(attachment, attachmentId);
-      Log.i(TAG, "Inserted quoted attachment at ID: " + attachmentId);
+    try {
+      for (Attachment attachment : quoteAttachment) {
+        AttachmentId attachmentId = insertAttachment(mmsId, attachment, true);
+        insertedAttachments.put(attachment, attachmentId);
+        Log.i(TAG, "Inserted quoted attachment at ID: " + attachmentId);
+      }
+    } catch (MmsException e) {
+      Log.w(TAG, "Failed to insert quote attachment! messageId: " + mmsId);
     }
 
     return insertedAttachments;
@@ -1000,7 +1010,7 @@ public class AttachmentTable extends DatabaseTable {
     values.put(TRANSFER_STATE, TRANSFER_PROGRESS_DONE);
     database.update(TABLE_NAME, values, PART_ID_WHERE, ((DatabaseAttachment)attachment).getAttachmentId().toStrings());
 
-    notifyConversationListeners(SignalDatabase.mms().getThreadIdForMessage(messageId));
+    notifyConversationListeners(SignalDatabase.messages().getThreadIdForMessage(messageId));
   }
 
   public void setTransferState(long messageId, @NonNull Attachment attachment, int transferState) {
@@ -1017,7 +1027,7 @@ public class AttachmentTable extends DatabaseTable {
 
     values.put(TRANSFER_STATE, transferState);
     database.update(TABLE_NAME, values, PART_ID_WHERE, attachmentId.toStrings());
-    notifyConversationListeners(SignalDatabase.mms().getThreadIdForMessage(messageId));
+    notifyConversationListeners(SignalDatabase.messages().getThreadIdForMessage(messageId));
   }
 
   /**
@@ -1473,6 +1483,20 @@ public class AttachmentTable extends DatabaseTable {
     }
 
     return EncryptedMediaDataSource.createFor(attachmentSecret, dataInfo.file, dataInfo.random, dataInfo.length);
+  }
+
+  public void duplicateAttachmentsForMessage(long destinationMessageId, long sourceMessageId, Collection<Long> excludedIds) {
+    SQLiteDatabaseExtensionsKt.withinTransaction(getWritableDatabase(), db -> {
+      db.execSQL("CREATE TEMPORARY TABLE tmp_part AS SELECT * FROM " + TABLE_NAME + " WHERE " + MMS_ID + " = ?", SqlUtil.buildArgs(sourceMessageId));
+      List<SqlUtil.Query> queries = SqlUtil.buildCollectionQuery(ROW_ID, excludedIds);
+      for (SqlUtil.Query query : queries) {
+        db.delete("tmp_part", query.getWhere(), query.getWhereArgs());
+      }
+      db.execSQL("UPDATE tmp_part SET " + ROW_ID + " = NULL, " + MMS_ID + " = ?", SqlUtil.buildArgs(destinationMessageId));
+      db.execSQL("INSERT INTO " + TABLE_NAME + " SELECT * FROM tmp_part");
+      db.execSQL("DROP TABLE tmp_part");
+      return 0;
+    });
   }
 
   @VisibleForTesting

@@ -19,12 +19,13 @@ import org.signal.storageservice.protos.groups.local.DecryptedGroupChange;
 import org.signal.storageservice.protos.groups.local.DecryptedMember;
 import org.signal.storageservice.protos.groups.local.DecryptedPendingMember;
 import org.signal.storageservice.protos.groups.local.DecryptedPendingMemberRemoval;
+import org.signal.storageservice.protos.groups.local.DecryptedRequestingMember;
 import org.thoughtcrime.securesms.database.GroupTable;
-import org.thoughtcrime.securesms.database.GroupTable.GroupRecord;
 import org.thoughtcrime.securesms.database.MessageTable;
 import org.thoughtcrime.securesms.database.RecipientTable;
 import org.thoughtcrime.securesms.database.SignalDatabase;
 import org.thoughtcrime.securesms.database.ThreadTable;
+import org.thoughtcrime.securesms.database.model.GroupRecord;
 import org.thoughtcrime.securesms.database.model.databaseprotos.DecryptedGroupV2Context;
 import org.thoughtcrime.securesms.dependencies.ApplicationDependencies;
 import org.thoughtcrime.securesms.groups.GroupDoesNotExistException;
@@ -41,7 +42,7 @@ import org.thoughtcrime.securesms.jobs.RequestGroupV2InfoJob;
 import org.thoughtcrime.securesms.jobs.RetrieveProfileJob;
 import org.thoughtcrime.securesms.keyvalue.SignalStore;
 import org.thoughtcrime.securesms.mms.MmsException;
-import org.thoughtcrime.securesms.mms.OutgoingGroupUpdateMessage;
+import org.thoughtcrime.securesms.mms.OutgoingMessage;
 import org.thoughtcrime.securesms.recipients.Recipient;
 import org.thoughtcrime.securesms.recipients.RecipientId;
 import org.thoughtcrime.securesms.sms.IncomingGroupUpdateMessage;
@@ -333,7 +334,14 @@ public class GroupsV2StateProcessor {
                                                       .filter(Objects::nonNull)
                                                       .anyMatch(serviceIds::matches);
 
-      return !currentlyInGroup && !addedAsMember && !addedAsPendingMember;
+      boolean addedAsRequestingMember = signedGroupChange.getNewRequestingMembersList()
+                                                         .stream()
+                                                         .map(DecryptedRequestingMember::getUuid)
+                                                         .map(UuidUtil::fromByteStringOrNull)
+                                                         .filter(Objects::nonNull)
+                                                         .anyMatch(serviceIds::matches);
+
+      return !currentlyInGroup && !addedAsMember && !addedAsPendingMember && !addedAsRequestingMember;
     }
 
     private boolean notHavingInviteRevoked(@NonNull DecryptedGroupChange signedGroupChange) {
@@ -511,11 +519,11 @@ public class GroupsV2StateProcessor {
                                                                       .addDeleteMembers(UuidUtil.toByteString(selfUuid))
                                                                       .build();
 
-      DecryptedGroupV2Context    decryptedGroupV2Context = GroupProtoUtil.createDecryptedGroupV2Context(masterKey, new GroupMutation(decryptedGroup, simulatedGroupChange, simulatedGroupState), null);
-      OutgoingGroupUpdateMessage leaveMessage            = new OutgoingGroupUpdateMessage(groupRecipient, decryptedGroupV2Context, System.currentTimeMillis());
+      DecryptedGroupV2Context decryptedGroupV2Context = GroupProtoUtil.createDecryptedGroupV2Context(masterKey, new GroupMutation(decryptedGroup, simulatedGroupChange, simulatedGroupState), null);
+      OutgoingMessage         leaveMessage            = OutgoingMessage.groupUpdateMessage(groupRecipient, decryptedGroupV2Context, System.currentTimeMillis());
 
       try {
-        MessageTable mmsDatabase = SignalDatabase.mms();
+        MessageTable mmsDatabase = SignalDatabase.messages();
         ThreadTable  threadTable = SignalDatabase.threads();
         long         threadId    = threadTable.getOrCreateThreadIdFor(groupRecipient);
         long         id          = mmsDatabase.insertMessageOutbox(leaveMessage, threadId, false, null);
@@ -546,7 +554,11 @@ public class GroupsV2StateProcessor {
       boolean needsAvatarFetch;
 
       if (inputGroupState.getLocalState() == null) {
-        groupDatabase.create(masterKey, newLocalState);
+        GroupId.V2 groupId = groupDatabase.create(masterKey, newLocalState);
+        if (groupId == null) {
+          Log.w(TAG, "Group create failed, trying to update");
+          groupDatabase.update(masterKey, newLocalState);
+        }
         needsAvatarFetch = !TextUtils.isEmpty(newLocalState.getAvatar());
       } else {
         groupDatabase.update(masterKey, newLocalState);
@@ -738,13 +750,13 @@ public class GroupsV2StateProcessor {
 
       if (outgoing) {
         try {
-          MessageTable               mmsDatabase     = SignalDatabase.mms();
-          ThreadTable                threadTable     = SignalDatabase.threads();
-          RecipientId                recipientId     = recipientTable.getOrInsertFromGroupId(groupId);
-          Recipient                  recipient       = Recipient.resolved(recipientId);
-          OutgoingGroupUpdateMessage outgoingMessage = new OutgoingGroupUpdateMessage(recipient, decryptedGroupV2Context, timestamp);
-          long                       threadId        = threadTable.getOrCreateThreadIdFor(recipient);
-          long                       messageId       = mmsDatabase.insertMessageOutbox(outgoingMessage, threadId, false, null);
+          MessageTable    mmsDatabase     = SignalDatabase.messages();
+          ThreadTable     threadTable     = SignalDatabase.threads();
+          RecipientId     recipientId     = recipientTable.getOrInsertFromGroupId(groupId);
+          Recipient       recipient       = Recipient.resolved(recipientId);
+          OutgoingMessage outgoingMessage = OutgoingMessage.groupUpdateMessage(recipient, decryptedGroupV2Context, timestamp);
+          long            threadId        = threadTable.getOrCreateThreadIdFor(recipient);
+          long            messageId       = mmsDatabase.insertMessageOutbox(outgoingMessage, threadId, false, null);
 
           mmsDatabase.markAsSent(messageId, true);
           threadTable.update(threadId, false, false);
@@ -752,7 +764,7 @@ public class GroupsV2StateProcessor {
           Log.w(TAG, e);
         }
       } else {
-        MessageTable                        smsDatabase  = SignalDatabase.sms();
+        MessageTable                        smsDatabase  = SignalDatabase.messages();
         RecipientId                         sender       = RecipientId.from(editor.get());
         IncomingTextMessage                    incoming     = new IncomingTextMessage(sender, -1, timestamp, timestamp, timestamp, "", Optional.of(groupId), 0, false, null);
         IncomingGroupUpdateMessage          groupMessage = new IncomingGroupUpdateMessage(incoming, decryptedGroupV2Context);

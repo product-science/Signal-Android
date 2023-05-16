@@ -29,7 +29,6 @@ import android.widget.ImageView;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
-import androidx.cardview.widget.CardView;
 import androidx.constraintlayout.widget.ConstraintLayout;
 import androidx.constraintlayout.widget.ConstraintSet;
 
@@ -39,12 +38,14 @@ import com.bumptech.glide.load.Transformation;
 import com.bumptech.glide.load.resource.bitmap.CenterCrop;
 import com.bumptech.glide.request.target.SimpleTarget;
 import com.bumptech.glide.request.transition.Transition;
+import com.google.android.material.card.MaterialCardView;
 
 import org.signal.core.util.Stopwatch;
 import org.signal.core.util.logging.Log;
 import org.thoughtcrime.securesms.LoggingFragment;
 import org.thoughtcrime.securesms.R;
 import org.thoughtcrime.securesms.animation.AnimationCompleteListener;
+import org.thoughtcrime.securesms.mediasend.camerax.CameraXModelBlocklist;
 import org.thoughtcrime.securesms.mediasend.v2.MediaAnimations;
 import org.thoughtcrime.securesms.mediasend.v2.MediaCountIndicatorButton;
 import org.thoughtcrime.securesms.mms.DecryptableStreamUriLoader.DecryptableUri;
@@ -59,7 +60,7 @@ import io.reactivex.rxjava3.android.schedulers.AndroidSchedulers;
 import io.reactivex.rxjava3.disposables.Disposable;
 
 /**
- * Camera capture implemented with the legacy camera API's. Should only be used if sdk < 21.
+ * Camera capture implemented with the legacy camera API's. Should only be used if a device is on the {@link CameraXModelBlocklist}.
  */
 public class Camera1Fragment extends LoggingFragment implements CameraFragment,
                                                                 TextureView.SurfaceTextureListener,
@@ -121,7 +122,7 @@ public class Camera1Fragment extends LoggingFragment implements CameraFragment,
   public void onViewCreated(@NonNull View view, @Nullable Bundle savedInstanceState) {
     super.onViewCreated(view, savedInstanceState);
     requireActivity().setRequestedOrientation(ActivityInfo.SCREEN_ORIENTATION_SENSOR);
-    cameraScreenBrightnessController = new CameraScreenBrightnessController(requireActivity().getWindow(), () -> camera.isCameraFacingFront());
+    cameraScreenBrightnessController = new CameraScreenBrightnessController(requireActivity().getWindow(), new CameraStateProvider(camera));
     getViewLifecycleOwner().getLifecycle().addObserver(cameraScreenBrightnessController);
 
     rotationListener  = new RotationListener(requireContext());
@@ -283,7 +284,7 @@ public class Camera1Fragment extends LoggingFragment implements CameraFragment,
            .into(thumbnail);
     } else {
       thumbBackground.setBackgroundResource(R.drawable.media_selection_camera_switch_background);
-      thumbnail.setImageResource(R.drawable.ic_gallery_outline_24);
+      thumbnail.setImageResource(R.drawable.symbol_album_tilt_24);
       thumbnail.setColorFilter(Color.WHITE);
       thumbnail.setScaleType(ImageView.ScaleType.CENTER_INSIDE);
     }
@@ -336,6 +337,11 @@ public class Camera1Fragment extends LoggingFragment implements CameraFragment,
       onCaptureClicked();
     });
 
+    captureButton.setOnLongClickListener(unused -> {
+      CameraFragment.toastVideoRecordingNotAvailable(requireContext());
+      return true;
+    });
+
     orderEnforcer.run(Stage.CAMERA_PROPERTIES_AVAILABLE, () -> {
       if (properties.getCameraCount() > 1) {
         flipButton.setVisibility(properties.getCameraCount() > 1 ? View.VISIBLE : View.GONE);
@@ -359,9 +365,9 @@ public class Camera1Fragment extends LoggingFragment implements CameraFragment,
   }
 
   private void initializeViewFinderAndControlsPositioning() {
-    CardView      cameraCard    = requireView().findViewById(R.id.camera_preview_parent);
-    View          controls      = requireView().findViewById(R.id.camera_controls_container);
-    CameraDisplay cameraDisplay = CameraDisplay.getDisplay(requireActivity());
+    MaterialCardView cameraCard = requireView().findViewById(R.id.camera_preview_parent);
+    View             controls   = requireView().findViewById(R.id.camera_controls_container);
+    CameraDisplay    cameraDisplay = CameraDisplay.getDisplay(requireActivity());
 
     if (!cameraDisplay.getRoundViewFinderCorners()) {
       cameraCard.setRadius(0f);
@@ -476,5 +482,24 @@ public class Camera1Fragment extends LoggingFragment implements CameraFragment,
 
   private enum Stage {
     SURFACE_AVAILABLE, CAMERA_PROPERTIES_AVAILABLE
+  }
+
+  private static class CameraStateProvider implements CameraScreenBrightnessController.CameraStateProvider {
+
+    private final Camera1Controller camera1Controller;
+
+    private CameraStateProvider(Camera1Controller camera1Controller) {
+      this.camera1Controller = camera1Controller;
+    }
+
+    @Override
+    public boolean isFrontFacingCameraSelected() {
+      return camera1Controller.isCameraFacingFront();
+    }
+
+    @Override
+    public boolean isFlashEnabled() {
+      return false;
+    }
   }
 }

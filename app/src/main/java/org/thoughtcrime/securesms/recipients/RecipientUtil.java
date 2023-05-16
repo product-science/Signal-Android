@@ -14,6 +14,7 @@ import org.thoughtcrime.securesms.database.GroupTable;
 import org.thoughtcrime.securesms.database.RecipientTable.RegisteredState;
 import org.thoughtcrime.securesms.database.SignalDatabase;
 import org.thoughtcrime.securesms.database.ThreadTable;
+import org.thoughtcrime.securesms.database.model.GroupRecord;
 import org.thoughtcrime.securesms.dependencies.ApplicationDependencies;
 import org.thoughtcrime.securesms.groups.GroupChangeBusyException;
 import org.thoughtcrime.securesms.groups.GroupChangeException;
@@ -24,7 +25,7 @@ import org.thoughtcrime.securesms.jobs.MultiDeviceMessageRequestResponseJob;
 import org.thoughtcrime.securesms.jobs.RefreshOwnProfileJob;
 import org.thoughtcrime.securesms.jobs.RotateProfileKeyJob;
 import org.thoughtcrime.securesms.keyvalue.SignalStore;
-import org.thoughtcrime.securesms.mms.OutgoingExpirationUpdateMessage;
+import org.thoughtcrime.securesms.mms.OutgoingMessage;
 import org.thoughtcrime.securesms.sms.MessageSender;
 import org.thoughtcrime.securesms.storage.StorageSyncHelper;
 import org.whispersystems.signalservice.api.push.ServiceId;
@@ -189,16 +190,28 @@ public class RecipientUtil {
     if (!isBlockable(recipient)) {
       throw new AssertionError("Recipient is not blockable!");
     }
-    Log.i(TAG, "Unblocking " + recipient.getId() + " (group: " + recipient.isGroup() + ")");
+    Log.i(TAG, "Unblocking " + recipient.getId() + " (group: " + recipient.isGroup() + ")", new Throwable());
 
     SignalDatabase.recipients().setBlocked(recipient.getId(), false);
     SignalDatabase.recipients().setProfileSharing(recipient.getId(), true);
     ApplicationDependencies.getJobManager().add(new MultiDeviceBlockedUpdateJob());
     StorageSyncHelper.scheduleSyncForDataChange();
+  }
 
-    if (recipient.hasServiceId()) {
-      ApplicationDependencies.getJobManager().add(MultiDeviceMessageRequestResponseJob.forAccept(recipient.getId()));
+  @WorkerThread
+  public static boolean isRecipientHidden(long threadId) {
+    if (threadId < 0) {
+      return false;
     }
+
+    ThreadTable threadTable     = SignalDatabase.threads();
+    Recipient   threadRecipient = threadTable.getRecipientForThreadId(threadId);
+
+    if (threadRecipient == null) {
+      return false;
+    }
+
+    return threadRecipient.isHidden();
   }
 
   /**
@@ -257,7 +270,7 @@ public class RecipientUtil {
   @WorkerThread
   public static boolean isPreMessageRequestThread(@Nullable Long threadId) {
     long beforeTime = SignalStore.misc().getMessageRequestEnableTime();
-    return threadId != null && SignalDatabase.mmsSms().getConversationCount(threadId, beforeTime) > 0;
+    return threadId != null && SignalDatabase.messages().getMessageCountForThread(threadId, beforeTime) > 0;
   }
 
   @WorkerThread
@@ -272,7 +285,7 @@ public class RecipientUtil {
       return;
     }
 
-    boolean firstMessage = SignalDatabase.mmsSms().getOutgoingSecureConversationCount(threadId) == 0;
+    boolean firstMessage = SignalDatabase.messages().getOutgoingSecureMessageCount(threadId) == 0;
 
     if (firstMessage) {
       SignalDatabase.recipients().setProfileSharing(recipient.getId(), true);
@@ -284,7 +297,8 @@ public class RecipientUtil {
            threadRecipient.isProfileSharing() ||
            threadRecipient.isSystemContact()  ||
            !threadRecipient.isRegistered()    ||
-           threadRecipient.isForceSmsSelection();
+           threadRecipient.isForceSmsSelection() ||
+           threadRecipient.isHidden();
   }
 
   /**
@@ -301,7 +315,7 @@ public class RecipientUtil {
       GroupTable groupDatabase = SignalDatabase.groups();
       return groupDatabase.getPushGroupsContainingMember(recipient.getId())
                           .stream()
-                          .anyMatch(GroupTable.GroupRecord::isV2Group);
+                          .anyMatch(GroupRecord::isV2Group);
 
     }
   }
@@ -317,10 +331,10 @@ public class RecipientUtil {
       return false;
     }
 
-    if (threadId == -1 || !SignalDatabase.mmsSms().hasMeaningfulMessage(threadId)) {
+    if (threadId == -1 || SignalDatabase.messages().canSetUniversalTimer(threadId)) {
       SignalDatabase.recipients().setExpireMessages(recipient.getId(), defaultTimer);
-      OutgoingExpirationUpdateMessage outgoingMessage = new OutgoingExpirationUpdateMessage(recipient, System.currentTimeMillis(), defaultTimer * 1000L);
-      MessageSender.send(context, outgoingMessage, SignalDatabase.threads().getOrCreateThreadIdFor(recipient), false, null, null);
+      OutgoingMessage outgoingMessage = OutgoingMessage.expirationUpdateMessage(recipient, System.currentTimeMillis(), defaultTimer * 1000L);
+      MessageSender.send(context, outgoingMessage, SignalDatabase.threads().getOrCreateThreadIdFor(recipient), MessageSender.SendType.SIGNAL, null, null);
       return true;
     }
     return false;
@@ -334,9 +348,11 @@ public class RecipientUtil {
            threadRecipient.isSystemContact() ||
            threadRecipient.isForceSmsSelection() ||
            !threadRecipient.isRegistered() ||
-           hasSentMessageInThread(threadId) ||
-           noSecureMessagesAndNoCallsInThread(threadId) ||
-           isPreMessageRequestThread(threadId);
+           (!threadRecipient.isHidden() && (
+               hasSentMessageInThread(threadId) ||
+               noSecureMessagesAndNoCallsInThread(threadId) ||
+               isPreMessageRequestThread(threadId))
+           );
   }
 
   @WorkerThread
@@ -349,7 +365,7 @@ public class RecipientUtil {
 
   @WorkerThread
   public static boolean hasSentMessageInThread(@Nullable Long threadId) {
-    return threadId != null && SignalDatabase.mmsSms().getOutgoingSecureConversationCount(threadId) != 0;
+    return threadId != null && SignalDatabase.messages().getOutgoingSecureMessageCount(threadId) != 0;
   }
 
   public static boolean isSmsOnly(long threadId, @NonNull Recipient threadRecipient) {
@@ -363,7 +379,7 @@ public class RecipientUtil {
       return true;
     }
 
-    return SignalDatabase.mmsSms().getSecureConversationCount(threadId) == 0 &&
+    return SignalDatabase.messages().getSecureMessageCount(threadId) == 0 &&
            !SignalDatabase.threads().hasReceivedAnyCallsSince(threadId, 0);
   }
 

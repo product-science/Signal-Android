@@ -1,6 +1,5 @@
 package org.thoughtcrime.securesms.badges.gifts.flow
 
-import android.content.DialogInterface
 import android.view.KeyEvent
 import android.widget.FrameLayout
 import android.widget.ImageView
@@ -13,6 +12,7 @@ import com.google.android.material.button.MaterialButton
 import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import io.reactivex.rxjava3.android.schedulers.AndroidSchedulers
 import io.reactivex.rxjava3.subjects.PublishSubject
+import org.signal.core.util.concurrent.LifecycleDisposable
 import org.signal.core.util.logging.Log
 import org.thoughtcrime.securesms.MainActivity
 import org.thoughtcrime.securesms.R
@@ -26,8 +26,6 @@ import org.thoughtcrime.securesms.components.settings.app.subscription.donate.Do
 import org.thoughtcrime.securesms.components.settings.app.subscription.donate.DonationCheckoutDelegate
 import org.thoughtcrime.securesms.components.settings.app.subscription.donate.DonationProcessorAction
 import org.thoughtcrime.securesms.components.settings.app.subscription.donate.gateway.GatewayRequest
-import org.thoughtcrime.securesms.components.settings.app.subscription.errors.DonationError
-import org.thoughtcrime.securesms.components.settings.app.subscription.errors.DonationErrorDialogs
 import org.thoughtcrime.securesms.components.settings.app.subscription.errors.DonationErrorSource
 import org.thoughtcrime.securesms.components.settings.configure
 import org.thoughtcrime.securesms.components.settings.conversation.preferences.RecipientPreference
@@ -39,7 +37,6 @@ import org.thoughtcrime.securesms.keyboard.emoji.EmojiKeyboardPageFragment
 import org.thoughtcrime.securesms.keyboard.emoji.search.EmojiSearchFragment
 import org.thoughtcrime.securesms.payments.FiatMoneyUtil
 import org.thoughtcrime.securesms.util.Debouncer
-import org.thoughtcrime.securesms.util.LifecycleDisposable
 import org.thoughtcrime.securesms.util.adapter.mapping.MappingAdapter
 import org.thoughtcrime.securesms.util.navigation.safeNavigate
 
@@ -48,7 +45,7 @@ import org.thoughtcrime.securesms.util.navigation.safeNavigate
  */
 class GiftFlowConfirmationFragment :
   DSLSettingsFragment(
-    titleId = R.string.GiftFlowConfirmationFragment__confirm_gift,
+    titleId = R.string.GiftFlowConfirmationFragment__confirm_donation,
     layoutId = R.layout.gift_flow_confirmation_fragment
   ),
   EmojiKeyboardPageFragment.Callback,
@@ -72,7 +69,6 @@ class GiftFlowConfirmationFragment :
   private lateinit var emojiKeyboard: MediaKeyboard
 
   private val lifecycleDisposable = LifecycleDisposable()
-  private var errorDialog: DialogInterface? = null
   private var donationCheckoutDelegate: DonationCheckoutDelegate? = null
   private lateinit var processingDonationPaymentDialog: AlertDialog
   private lateinit var verifyingRecipientDonationPaymentDialog: AlertDialog
@@ -161,7 +157,7 @@ class GiftFlowConfirmationFragment :
           viewModel.setAdditionalMessage(it)
         },
         onEmojiToggleClicked = {
-          if (inputAwareLayout.isKeyboardOpen || (!inputAwareLayout.isKeyboardOpen && !inputAwareLayout.isInputOpen)) {
+          if ((inputAwareLayout.isKeyboardOpen && !emojiKeyboard.isEmojiSearchMode) || (!inputAwareLayout.isKeyboardOpen && !inputAwareLayout.isInputOpen)) {
             inputAwareLayout.show(it, emojiKeyboard)
             emojiToggle.setImageResource(R.drawable.ic_keyboard_24)
           } else {
@@ -192,12 +188,6 @@ class GiftFlowConfirmationFragment :
     }
 
     lifecycleDisposable.bindTo(viewLifecycleOwner)
-    lifecycleDisposable += DonationError
-      .getErrorsForSource(DonationErrorSource.GIFT)
-      .observeOn(AndroidSchedulers.mainThread())
-      .subscribe { donationError ->
-        onPaymentError(donationError)
-      }
   }
 
   override fun onDestroyView() {
@@ -231,27 +221,9 @@ class GiftFlowConfirmationFragment :
       )
 
       textPref(
-        summary = DSLSettingsText.from(R.string.GiftFlowConfirmationFragment__your_gift_will_be_sent_in)
+        summary = DSLSettingsText.from(R.string.GiftFlowConfirmationFragment__the_recipient_will_be_notified)
       )
     }
-  }
-
-  private fun onPaymentError(throwable: Throwable?) {
-    Log.w(TAG, "onPaymentError", throwable, true)
-
-    if (errorDialog != null) {
-      Log.i(TAG, "Already displaying an error dialog. Skipping.")
-      return
-    }
-
-    errorDialog = DonationErrorDialogs.show(
-      requireContext(), throwable,
-      object : DonationErrorDialogs.DialogCallback() {
-        override fun onDialogDismissed() {
-          requireActivity().finish()
-        }
-      }
-    )
   }
 
   override fun onToolbarNavigationClicked() {
@@ -301,4 +273,7 @@ class GiftFlowConfirmationFragment :
   }
 
   override fun onProcessorActionProcessed() = Unit
+  override fun onUserCancelledPaymentFlow() {
+    findNavController().popBackStack(R.id.giftFlowConfirmationFragment, false)
+  }
 }

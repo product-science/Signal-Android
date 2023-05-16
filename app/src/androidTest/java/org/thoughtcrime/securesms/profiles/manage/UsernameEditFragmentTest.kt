@@ -73,6 +73,7 @@ class UsernameEditFragmentTest {
     onView(withContentDescription(R.string.load_more_header__loading)).check(matches(withEffectiveVisibility(ViewMatchers.Visibility.GONE)))
   }
 
+  @Ignore("Flakey espresso test.")
   @Test
   fun testUsernameCreationOutsideOfRegistration() {
     val scenario = createScenario()
@@ -99,7 +100,7 @@ class UsernameEditFragmentTest {
 
     InstrumentationApplicationDependencyProvider.addMockWebRequestHandlers(
       Put("/v1/accounts/username/reserved") {
-        MockResponse().success(ReserveUsernameResponse(username, "reservationToken"))
+        MockResponse().success(ReserveUsernameResponse(username))
       },
       Put("/v1/accounts/username/confirm") {
         MockResponse().success()

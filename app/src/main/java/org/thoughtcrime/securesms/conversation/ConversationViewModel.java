@@ -31,7 +31,6 @@ import org.thoughtcrime.securesms.database.DatabaseObserver;
 import org.thoughtcrime.securesms.database.model.MessageId;
 import org.thoughtcrime.securesms.database.model.StoryViewState;
 import org.thoughtcrime.securesms.dependencies.ApplicationDependencies;
-import org.thoughtcrime.securesms.keyvalue.SignalStore;
 import org.thoughtcrime.securesms.mediasend.Media;
 import org.thoughtcrime.securesms.mediasend.MediaRepository;
 import org.thoughtcrime.securesms.notifications.profiles.NotificationProfile;
@@ -53,12 +52,12 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
-import java.util.concurrent.TimeUnit;
 
 import io.reactivex.rxjava3.android.schedulers.AndroidSchedulers;
 import io.reactivex.rxjava3.core.BackpressureStrategy;
 import io.reactivex.rxjava3.core.Flowable;
 import io.reactivex.rxjava3.core.Observable;
+import io.reactivex.rxjava3.core.Single;
 import io.reactivex.rxjava3.disposables.CompositeDisposable;
 import io.reactivex.rxjava3.disposables.Disposable;
 import io.reactivex.rxjava3.processors.PublishProcessor;
@@ -73,6 +72,7 @@ public class ConversationViewModel extends ViewModel {
   private final Application                           context;
   private final MediaRepository                       mediaRepository;
   private final ConversationRepository                conversationRepository;
+  private final ScheduledMessagesRepository           scheduledMessagesRepository;
   private final MutableLiveData<List<Media>>          recentMedia;
   private final BehaviorSubject<Long>                 threadId;
   private final Observable<MessageData>               messageData;
@@ -99,6 +99,7 @@ public class ConversationViewModel extends ViewModel {
   private final CompositeDisposable                   disposables;
   private final BehaviorSubject<Unit>                 conversationStateTick;
   private final PublishProcessor<Long>                markReadRequestPublisher;
+  private final Observable<Integer>                   scheduledMessageCount;
 
   private ConversationIntents.Args args;
   private int                      jumpToPosition;
@@ -107,6 +108,7 @@ public class ConversationViewModel extends ViewModel {
     this.context                        = ApplicationDependencies.getApplication();
     this.mediaRepository                = new MediaRepository();
     this.conversationRepository         = new ConversationRepository();
+    this.scheduledMessagesRepository    = new ScheduledMessagesRepository();
     this.recentMedia                    = new MutableLiveData<>();
     this.showScrollButtons              = new MutableLiveData<>(false);
     this.hasUnreadMentions              = new MutableLiveData<>(false);
@@ -124,7 +126,7 @@ public class ConversationViewModel extends ViewModel {
     this.recipientId                    = BehaviorSubject.create();
     this.threadId                       = BehaviorSubject.create();
     this.groupAuthorNameColorHelper     = new GroupAuthorNameColorHelper();
-    this.conversationStateStore         = new RxStore<>(ConversationState.create(), Schedulers.io());
+    this.conversationStateStore         = new RxStore<>(ConversationState.create(), Schedulers.computation());
     this.disposables                    = new CompositeDisposable();
     this.conversationStateTick          = BehaviorSubject.createDefault(Unit.INSTANCE);
     this.markReadRequestPublisher       = PublishProcessor.create();
@@ -184,7 +186,13 @@ public class ConversationViewModel extends ViewModel {
           ApplicationDependencies.getDatabaseObserver().registerConversationObserver(data.getThreadId(), conversationObserver);
           ApplicationDependencies.getDatabaseObserver().registerMessageInsertObserver(data.getThreadId(), messageInsertObserver);
 
-          ConversationDataSource dataSource = new ConversationDataSource(context, data.getThreadId(), messageRequestData, data.showUniversalExpireTimerMessage(), data.getThreadSize());
+          ConversationDataSource dataSource = new ConversationDataSource(context,
+                                                                         data.getThreadId(),
+                                                                         messageRequestData,
+                                                                         data.showUniversalExpireTimerMessage(),
+                                                                         data.getThreadSize(),
+                                                                         data.getThreadRecipient());
+
           PagingConfig config = new PagingConfig.Builder().setPageSize(25)
                                                           .setBufferPages(2)
                                                           .setStartIndex(Math.max(startPosition, 0))
@@ -200,7 +208,11 @@ public class ConversationViewModel extends ViewModel {
         .withLatestFrom(conversationMetadata, (messages, metadata) ->  new MessageData(metadata, messages))
         .doOnNext(a -> SignalLocalMetrics.ConversationOpen.onDataLoaded());
 
-    Observable<Recipient> liveRecipient = recipientId.distinctUntilChanged().switchMap(id -> Recipient.live(id).asObservable());
+    scheduledMessageCount = threadId
+        .observeOn(Schedulers.io())
+        .switchMap(scheduledMessagesRepository::getScheduledMessageCount);
+
+    Observable<Recipient> liveRecipient = recipientId.distinctUntilChanged().switchMap(id -> Recipient.live(id).observable());
 
     canShowAsBubble = threadId.observeOn(Schedulers.io()).map(conversationRepository::canShowAsBubble);
     wallpaper       = liveRecipient.map(r -> Optional.ofNullable(r.getWallpaper())).distinctUntilChanged();
@@ -252,6 +264,15 @@ public class ConversationViewModel extends ViewModel {
         }
       });
     }
+  }
+
+  void setDistributionType(int distributionType) {
+    Long threadId = this.threadId.getValue();
+    if (threadId == null) {
+      return;
+    }
+
+    conversationRepository.setConversationDistributionType(threadId, distributionType);
   }
 
   void submitMarkReadRequest(long timestampSince) {
@@ -332,6 +353,10 @@ public class ConversationViewModel extends ViewModel {
     return conversationStateStore.getState().getSecurityInfo().isPushAvailable();
   }
 
+  void muteConversation(long until) {
+    conversationRepository.setConversationMuted(args.getRecipientId(), until);
+  }
+
   @NonNull ConversationState getConversationStateSnapshot() {
     return conversationStateStore.getState();
   }
@@ -369,6 +394,10 @@ public class ConversationViewModel extends ViewModel {
   @NonNull Observable<ChatColors> getChatColors() {
     return chatColors
         .observeOn(AndroidSchedulers.mainThread());
+  }
+
+  @NonNull Observable<Integer> getScheduledMessageCount() {
+    return scheduledMessageCount.observeOn(AndroidSchedulers.mainThread());
   }
 
   void setHasUnreadMentions(boolean hasUnreadMentions) {
@@ -412,10 +441,15 @@ public class ConversationViewModel extends ViewModel {
   }
 
   @NonNull LiveData<Optional<NotificationProfile>> getActiveNotificationProfile() {
-    final Observable<Optional<NotificationProfile>> activeProfile = Observable.combineLatest(Observable.interval(0, 30, TimeUnit.SECONDS), notificationProfilesRepository.getProfiles(), (interval, profiles) -> profiles)
-                                                                              .map(profiles -> Optional.ofNullable(NotificationProfiles.getActiveProfile(profiles)));
+    Flowable<Optional<NotificationProfile>> activeProfile = notificationProfilesRepository.getProfiles()
+                                                                                          .map(profiles -> Optional.ofNullable(NotificationProfiles.getActiveProfile(profiles)));
 
-    return LiveDataReactiveStreams.fromPublisher(activeProfile.toFlowable(BackpressureStrategy.LATEST));
+    return LiveDataReactiveStreams.fromPublisher(activeProfile);
+  }
+
+  @NonNull
+  public Single<ConversationMessage> resolveMessageToEdit(@NonNull ConversationMessage message) {
+    return conversationRepository.resolveMessageToEdit(message);
   }
 
   void setArgs(@NonNull ConversationIntents.Args args) {
@@ -444,9 +478,7 @@ public class ConversationViewModel extends ViewModel {
   }
 
   public void insertSmsExportUpdateEvent(@NonNull Recipient recipient) {
-    if (SignalStore.misc().getSmsExportPhase().isAtLeastPhase1()) {
-      conversationRepository.insertSmsExportUpdateEvent(recipient);
-    }
+    conversationRepository.insertSmsExportUpdateEvent(recipient);
   }
 
   enum Event {

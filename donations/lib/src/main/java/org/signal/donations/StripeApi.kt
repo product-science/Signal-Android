@@ -90,13 +90,15 @@ class StripeApi(
       Single.just(CreatePaymentIntentResult.AmountIsTooSmall(price))
     } else if (Validation.isAmountTooLarge(price)) {
       Single.just(CreatePaymentIntentResult.AmountIsTooLarge(price))
-    } else if (!Validation.supportedCurrencyCodes.contains(price.currency.currencyCode.uppercase(Locale.ROOT))) {
-      Single.just<CreatePaymentIntentResult>(CreatePaymentIntentResult.CurrencyIsNotSupported(price.currency.currencyCode))
     } else {
-      paymentIntentFetcher
-        .fetchPaymentIntent(price, level)
-        .map<CreatePaymentIntentResult> { CreatePaymentIntentResult.Success(it) }
-    }.subscribeOn(Schedulers.io())
+      if (!Validation.supportedCurrencyCodes.contains(price.currency.currencyCode.uppercase(Locale.ROOT))) {
+        Single.just<CreatePaymentIntentResult>(CreatePaymentIntentResult.CurrencyIsNotSupported(price.currency.currencyCode))
+      } else {
+        paymentIntentFetcher
+          .fetchPaymentIntent(price, level)
+          .map<CreatePaymentIntentResult> { CreatePaymentIntentResult.Success(it) }
+      }.subscribeOn(Schedulers.io())
+    }
   }
 
   /**
@@ -131,11 +133,15 @@ class StripeApi(
   fun getSetupIntent(stripeIntentAccessor: StripeIntentAccessor): StripeSetupIntent {
     return when (stripeIntentAccessor.objectType) {
       StripeIntentAccessor.ObjectType.SETUP_INTENT -> get("setup_intents/${stripeIntentAccessor.intentId}?client_secret=${stripeIntentAccessor.intentClientSecret}").use {
+        val body = it.body()?.string()
         try {
-          objectMapper.readValue(it.body()!!.string())
+          objectMapper.readValue(body!!)
         } catch (e: InvalidDefinitionException) {
+          Log.w(TAG, "Failed to parse JSON for StripeSetupIntent.")
+          ResponseFieldLogger.logFields(objectMapper, body)
           throw StripeError.FailedToParseSetupIntentResponseError(e)
         } catch (e: Exception) {
+          Log.w(TAG, "Failed to read value from JSON.", e, true)
           throw StripeError.FailedToParseSetupIntentResponseError(null)
         }
       }
@@ -149,11 +155,15 @@ class StripeApi(
   fun getPaymentIntent(stripeIntentAccessor: StripeIntentAccessor): StripePaymentIntent {
     return when (stripeIntentAccessor.objectType) {
       StripeIntentAccessor.ObjectType.PAYMENT_INTENT -> get("payment_intents/${stripeIntentAccessor.intentId}?client_secret=${stripeIntentAccessor.intentClientSecret}").use {
+        val body = it.body()?.string()
         try {
-          objectMapper.readValue(it.body()!!.string())
+          objectMapper.readValue(body!!)
         } catch (e: InvalidDefinitionException) {
+          Log.w(TAG, "Failed to parse JSON for StripePaymentIntent.")
+          ResponseFieldLogger.logFields(objectMapper, body)
           throw StripeError.FailedToParsePaymentIntentResponseError(e)
         } catch (e: Exception) {
+          Log.w(TAG, "Failed to read value from JSON.", e, true)
           throw StripeError.FailedToParsePaymentIntentResponseError(null)
         }
       }
@@ -223,7 +233,7 @@ class StripeApi(
     val tokenId = paymentSource.getTokenId()
     val parameters = mutableMapOf(
       "card[token]" to tokenId,
-      "type" to "card",
+      "type" to "card"
     )
 
     return postForm("payment_methods", parameters)
@@ -546,5 +556,4 @@ class StripeApi(
       }
     }
   }
-
 }

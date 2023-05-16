@@ -115,7 +115,7 @@ object FakeMessageRecords {
     body: String = "body",
     slideDeck: SlideDeck = SlideDeck(),
     partCount: Int = slideDeck.slides.count(),
-    mailbox: Long = MmsSmsColumns.Types.BASE_INBOX_TYPE,
+    mailbox: Long = MessageTypes.BASE_INBOX_TYPE,
     mismatches: Set<IdentityKeyMismatch> = emptySet(),
     failures: Set<NetworkFailure> = emptySet(),
     subscriptionId: Int = -1,
@@ -137,13 +137,14 @@ object FakeMessageRecords {
     storyType: StoryType = StoryType.NONE,
     parentStoryId: ParentStoryId? = null,
     giftBadge: GiftBadge? = null,
-    payment: Payment? = null
+    payment: Payment? = null,
+    call: CallTable.Call? = null
   ): MediaMmsMessageRecord {
     return MediaMmsMessageRecord(
       id,
       conversationRecipient,
-      individualRecipient,
       recipientDeviceId,
+      individualRecipient,
       dateSent,
       dateReceived,
       dateServer,
@@ -173,7 +174,12 @@ object FakeMessageRecords {
       storyType,
       parentStoryId,
       giftBadge,
-      payment
+      payment,
+      call,
+      -1,
+      null,
+      null,
+      0
     )
   }
 }
