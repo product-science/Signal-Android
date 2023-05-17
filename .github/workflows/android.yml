@@ -35,7 +35,7 @@ jobs:
       uses: gradle/wrapper-validation-action@v1
 
     - name: Build with Gradle
-      run: ./gradlew qa --parallel
+      run: ./gradlew --dependency-verification lenient clean assemblePlayProdDebug
 
     - name: Archive reports for failed build
       if: ${{ failure() }}
@@ -43,3 +43,14 @@ jobs:
       with:
         name: reports
         path: '*/build/reports'
+        
+    - name: Connect to Regression analysis
+      uses: product-science/regression-action@main
+      with:
+          role-to-assume: arn:aws:iam::309674264215:role/github-device-farm-role
+          project-arn: arn:aws:devicefarm:us-west-2:309674264215:project:c2fef40d-1a92-471b-a13f-ad3e93248f89 
+          device-pool-arn: arn:aws:devicefarm:us-west-2:309674264215:devicepool:c2fef40d-1a92-471b-a13f-ad3e93248f89/8e4b07ab-3f46-4729-aa19-8d310833c712
+          app-file: app/build/outputs/apk/playProd/debug/Signal-Android-play-prod-universal-debug-6.20.4.apk
+          pstool-project: signal-6vtmmj
+          pstool-flow: 1
+          pstool-email: auto-test-user-1@productscience.ai    
