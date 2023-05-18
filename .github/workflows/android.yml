@@ -45,7 +45,7 @@ jobs:
         path: '*/build/reports'
         
     - name: Connect to Regression analysis
-      uses: product-science/regression-action@main
+      uses: product-science/regression-analysis@main
       with:
           role-to-assume: arn:aws:iam::309674264215:role/github-device-farm-role
           project-arn: arn:aws:devicefarm:us-west-2:309674264215:project:c2fef40d-1a92-471b-a13f-ad3e93248f89 
