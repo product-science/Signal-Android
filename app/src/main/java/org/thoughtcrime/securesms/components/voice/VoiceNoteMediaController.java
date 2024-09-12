@@ -55,17 +55,13 @@ public class VoiceNoteMediaController implements DefaultLifecycleObserver {
   private MutableLiveData<VoiceNotePlaybackState>       voiceNotePlaybackState = new MutableLiveData<>(VoiceNotePlaybackState.NONE);
   private LiveData<Optional<VoiceNotePlayerView.State>> voiceNotePlayerViewState;
   private VoiceNoteProximityWakeLockManager             voiceNoteProximityWakeLockManager;
-  private boolean                                       isMediaBrowserCreationPostponed;
 
   private final MediaControllerCompatCallback mediaControllerCompatCallback = new MediaControllerCompatCallback();
+  private Runnable                            onConnectRunnable;
+
 
   public VoiceNoteMediaController(@NonNull FragmentActivity activity) {
-    this(activity, false);
-  }
-
-  public VoiceNoteMediaController(@NonNull FragmentActivity activity, boolean postponeMediaBrowserCreation) {
     this.activity                        = activity;
-    this.isMediaBrowserCreationPostponed = postponeMediaBrowserCreation;
 
     activity.getLifecycle().addObserver(this);
 
@@ -98,7 +94,7 @@ public class VoiceNoteMediaController implements DefaultLifecycleObserver {
     });
   }
 
-  public void ensureMediaBrowser() {
+  private void ensureMediaBrowser() {
     if (mediaBrowser != null) {
       return;
     }
@@ -117,25 +113,6 @@ public class VoiceNoteMediaController implements DefaultLifecycleObserver {
     return voiceNotePlayerViewState;
   }
 
-  public void finishPostpone() {
-    isMediaBrowserCreationPostponed = false;
-    if (activity != null && mediaBrowser == null && activity.getLifecycle().getCurrentState().isAtLeast(Lifecycle.State.RESUMED)) {
-      ensureMediaBrowser();
-      mediaBrowser.disconnect();
-      mediaBrowser.connect();
-    }
-  }
-
-  @Override
-  public void onResume(@NonNull LifecycleOwner owner) {
-    if (mediaBrowser == null && isMediaBrowserCreationPostponed) {
-      return;
-    }
-
-    ensureMediaBrowser();
-    mediaBrowser.disconnect();
-    mediaBrowser.connect();
-  }
 
   @Override
   public void onPause(@NonNull LifecycleOwner owner) {
@@ -143,10 +120,6 @@ public class VoiceNoteMediaController implements DefaultLifecycleObserver {
 
     if (MediaControllerCompat.getMediaController(activity) != null) {
       MediaControllerCompat.getMediaController(activity).unregisterCallback(mediaControllerCompatCallback);
-    }
-
-    if (mediaBrowser != null) {
-      mediaBrowser.disconnect();
     }
   }
 
@@ -185,15 +158,30 @@ public class VoiceNoteMediaController implements DefaultLifecycleObserver {
 
 
   public void startConsecutivePlayback(@NonNull Uri audioSlideUri, long messageId, double progress) {
-    startPlayback(audioSlideUri, messageId, -1, progress, false);
+    onConnectRunnable = () -> startPlayback(audioSlideUri, messageId, -1, progress, false);
+    ensureMediaBrowser();
+    if (mediaBrowser.isConnected()) {
+      mediaBrowser.disconnect();
+    }
+    mediaBrowser.connect();
   }
 
   public void startSinglePlayback(@NonNull Uri audioSlideUri, long messageId, double progress) {
-    startPlayback(audioSlideUri, messageId, -1, progress, true);
+    onConnectRunnable = () -> startPlayback(audioSlideUri, messageId, -1, progress, true);
+    ensureMediaBrowser();
+    if (mediaBrowser.isConnected()) {
+      mediaBrowser.disconnect();
+    }
+    mediaBrowser.connect();
   }
 
   public void startSinglePlaybackForDraft(@NonNull Uri draftUri, long threadId, double progress) {
-    startPlayback(draftUri, -1, threadId, progress, true);
+    onConnectRunnable = () -> startPlayback(draftUri, -1, threadId, progress, true);
+    ensureMediaBrowser();
+    if (mediaBrowser.isConnected()) {
+      mediaBrowser.disconnect();
+    }
+    mediaBrowser.connect();
   }
 
   /**
@@ -395,6 +383,11 @@ public class VoiceNoteMediaController implements DefaultLifecycleObserver {
       mediaController.registerCallback(mediaControllerCompatCallback);
 
       mediaControllerCompatCallback.onPlaybackStateChanged(mediaController.getPlaybackState());
+
+      if (onConnectRunnable != null) {
+        onConnectRunnable.run();
+        onConnectRunnable = null;
+      }
     }
 
     @Override
@@ -407,6 +400,7 @@ public class VoiceNoteMediaController implements DefaultLifecycleObserver {
     public void onConnectionFailed() {
       Log.d(TAG, "Voice note MediaBrowser connection failed.");
       cleanUpOldProximityWakeLockManager();
+      onConnectRunnable = null;
     }
 
     private void cleanUpOldProximityWakeLockManager() {

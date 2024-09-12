@@ -510,7 +510,7 @@ public class ConversationParentFragment extends Fragment
       return;
     }
 
-    voiceNoteMediaController = new VoiceNoteMediaController(requireActivity(), true);
+    voiceNoteMediaController = new VoiceNoteMediaController(requireActivity());
     voiceRecorderWakeLock    = new VoiceRecorderWakeLock(requireActivity());
     bluetoothVoiceNoteUtil   = BluetoothVoiceNoteUtil.Companion.create(requireContext(), this::beginRecording, this::onBluetoothPermissionDenied);
 
@@ -4021,7 +4021,6 @@ public class ConversationParentFragment extends Fragment
     if (getActivity() != null) {
       requireActivity().supportStartPostponedEnterTransition();
     }
-    voiceNoteMediaController.finishPostpone();
   }
 
   @Override

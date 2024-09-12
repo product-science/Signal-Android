@@ -983,7 +983,6 @@ public class ConversationListFragment extends MainFragment implements ActionMode
     AppStartup.getInstance().onCriticalRenderEventEnd();
     startupStopwatch.split("first-render");
     startupStopwatch.stop(TAG);
-    mediaControllerOwner.getVoiceNoteMediaController().finishPostpone();
 
     if (getParentFragment() != null) {
       requireCallback().getSearchToolbar().get();
